@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico - SyncUS</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <span>SyncUS</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html" class="sidebar-item">📊 Dashboard</a></li>
+            <li><a href="transactions.html" class="sidebar-item">💰 Lançamentos</a></li>
+            <li><a href="history.html" class="sidebar-item active">📜 Histórico</a></li>
+            <li><a href="reports.html" class="sidebar-item">📈 Relatórios</a></li>
+            <li><a href="settings.html" class="sidebar-item">⚙️ Configurações</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="#" onclick="logout()" class="sidebar-item">🚪 Sair</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">Histórico Completo</h1>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="searchInput" placeholder="Pesquisar descrição..." style="width: 250px;">
+                <button class="btn btn-primary">🔍</button>
+            </div>
+        </header>
+
+        <div class="card" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-primary" style="font-size: 0.8rem;">Hoje</button>
+            <button class="btn btn-primary" style="font-size: 0.8rem;">Essa Semana</button>
+            <button class="btn btn-primary" style="font-size: 0.8rem;">Esse Mês</button>
+            <button class="btn btn-primary" style="font-size: 0.8rem;">Esse Ano</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Tipo</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Valor</th>
+                        <th>Quem Pagou</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <!-- Preenchido via JS -->
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">Carregando lançamentos...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadHistory();
+        });
+
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_URL}/transactions/`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                
+                if (response.ok) {
+                    const txs = await response.json();
+                    const tbody = document.getElementById('historyTableBody');
+                    tbody.innerHTML = '';
+
+                    if (txs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">Nenhum lançamento encontrado.</td></tr>';
+                        return;
+                    }
+
+                    txs.forEach(t => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formatDate(t.date)}</td>
+                            <td><span style="color: ${t.type === 'entrada' ? 'var(--accent-green)' : 'var(--accent-red)'}">${t.type === 'entrada' ? '🟢' : '🔴'}</span></td>
+                            <td>${t.description}</td>
+                            <td><span class="btn" style="padding: 2px 8px; font-size: 0.7rem; background: #444;">${t.category.name}</span></td>
+                            <td style="font-weight: bold; color: ${t.type === 'entrada' ? 'var(--accent-green)' : 'var(--accent-red)'}">${formatCurrency(t.amount)}</td>
+                            <td>${t.paid_by === 'user1' ? 'Você' : (t.paid_by === 'both' ? 'Ambos' : 'Parceira')}</td>
+                            <td>
+                                <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;">✏️</button>
+                                <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem;">🗑️</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (err) {
+                console.error('Erro ao carregar histórico', err);
+            }
+        }
+    </script>
+</body>
+</html>

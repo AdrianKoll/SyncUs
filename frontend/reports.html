@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios - SyncUS</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <span>SyncUS</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html" class="sidebar-item">📊 Dashboard</a></li>
+            <li><a href="transactions.html" class="sidebar-item">💰 Lançamentos</a></li>
+            <li><a href="history.html" class="sidebar-item">📜 Histórico</a></li>
+            <li><a href="reports.html" class="sidebar-item active">📈 Relatórios</a></li>
+            <li><a href="settings.html" class="sidebar-item">⚙️ Configurações</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="#" onclick="logout()" class="sidebar-item">🚪 Sair</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">Relatórios e Análises</h1>
+        </header>
+
+        <div class="card" style="margin-bottom: 30px;">
+            <div style="display: flex; gap: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px;">
+                <button class="sidebar-item active" style="background: none; border: none; border-bottom: 2px solid var(--accent-blue); border-radius: 0;">Resumo Mensal</button>
+                <button class="sidebar-item" style="background: none; border: none; border-radius: 0;">Gastos por Categoria</button>
+                <button class="sidebar-item" style="background: none; border: none; border-radius: 0;">Divisão por Pessoa</button>
+                <button class="sidebar-item" style="background: none; border: none; border-radius: 0;">Dívidas Mútuas</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Período</label>
+                    <select style="width: 200px;">
+                        <option>Agosto 2026</option>
+                        <option>Julho 2026</option>
+                        <option>Junho 2026</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary">🖨️ Imprimir</button>
+                    <button class="btn btn-success">📥 Exportar CSV</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mês</th>
+                            <th>Entradas</th>
+                            <th>Saídas</th>
+                            <th>Saldo</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Agosto 2026</td>
+                            <td class="value-positive">R$ 5.000,00</td>
+                            <td class="value-negative">R$ 2.450,00</td>
+                            <td class="value-positive">R$ 2.550,00</td>
+                            <td>✅ Positivo</td>
+                        </tr>
+                        <tr>
+                            <td>Julho 2026</td>
+                            <td class="value-positive">R$ 4.800,00</td>
+                            <td class="value-negative">R$ 5.100,00</td>
+                            <td class="value-negative">-R$ 300,00</td>
+                            <td>⚠️ Negativo</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+</body>
+</html>

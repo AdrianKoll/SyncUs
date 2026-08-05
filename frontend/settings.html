@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - SyncUS</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <span>SyncUS</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html" class="sidebar-item">📊 Dashboard</a></li>
+            <li><a href="transactions.html" class="sidebar-item">💰 Lançamentos</a></li>
+            <li><a href="history.html" class="sidebar-item">📜 Histórico</a></li>
+            <li><a href="reports.html" class="sidebar-item">📈 Relatórios</a></li>
+            <li><a href="settings.html" class="sidebar-item active">⚙️ Configurações</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="#" onclick="logout()" class="sidebar-item">🚪 Sair</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">Configurações</h1>
+        </header>
+
+        <!-- BLOCO 1: CONEXÃO COM PARCEIRA -->
+        <div class="card" style="margin-bottom: 30px;">
+            <h3 style="margin-bottom: 20px;">🔗 Conexão com sua Parceira</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                <div>
+                    <label>Seu Token de Conexão</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="myToken" readonly value="Carregando...">
+                        <button class="btn btn-primary" onclick="copyToken()">📋</button>
+                    </div>
+                    <button class="btn btn-warning" style="margin-top: 10px; font-size: 0.8rem;" onclick="refreshToken()">🔄 Gerar Novo Token</button>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 5px;">Validade: 7 dias. Compartilhe com sua parceira.</p>
+                </div>
+                <div>
+                    <label>Token da Sua Parceira</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="partnerToken" placeholder="Cole o token aqui">
+                        <button class="btn btn-success" onclick="connectPartner()">✅ Conectar</button>
+                    </div>
+                    <div id="connectionStatus" style="margin-top: 20px;">
+                        Status: <span id="statusLabel">🔴 Desconectado</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BLOCO 2: MINHA CONTA -->
+        <div class="card" style="margin-bottom: 30px;">
+            <h3 style="margin-bottom: 20px;">👤 Minha Conta</h3>
+            <form id="profileForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="profileName">
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input type="email" id="profileEmail">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">💾 Salvar Dados da Conta</button>
+            </form>
+        </div>
+
+        <!-- BLOCO 3: DADOS DO APP -->
+        <div class="card">
+            <h3 style="margin-bottom: 20px;">🗂️ Dados do Aplicativo</h3>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary">➕ Gerenciar Categorias</button>
+                <button class="btn btn-warning">📤 Exportar Dados</button>
+                <button class="btn btn-danger">⚠️ Excluir Todos os Dados</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await checkAuth();
+            if (user) {
+                document.getElementById('myToken').value = user.connection_token || 'Nenhum token gerado';
+                document.getElementById('profileName').value = user.name;
+                document.getElementById('profileEmail').value = user.email;
+                
+                if (user.room_id) {
+                    document.getElementById('statusLabel').innerHTML = '🟢 Conectado';
+                    document.getElementById('statusLabel').className = 'value-positive';
+                }
+            }
+        });
+
+        async function refreshToken() {
+            const response = await fetch(`${API_URL}/users/token/refresh`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (response.ok) {
+                const user = await response.json();
+                document.getElementById('myToken').value = user.connection_token;
+                showToast('Novo token gerado!', 'success');
+            }
+        }
+
+        async function connectPartner() {
+            const token = document.getElementById('partnerToken').value;
+            if (!token) return showToast('Insira o token da parceira', 'danger');
+
+            const response = await fetch(`${API_URL}/users/connect?token=${token}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            
+            if (response.ok) {
+                showToast('Contas conectadas com sucesso!', 'success');
+                location.reload();
+            } else {
+                const error = await response.json();
+                showToast(error.detail, 'danger');
+            }
+        }
+
+        function copyToken() {
+            const copyText = document.getElementById("myToken");
+            copyText.select();
+            document.execCommand("copy");
+            showToast('Token copiado!', 'success');
+        }
+    </script>
+</body>
+</html>
