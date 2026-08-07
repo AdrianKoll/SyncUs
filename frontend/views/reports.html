@@ -1,0 +1,145 @@
+<h1 class="titulo-pagina mb-1">
+    <i class="fa-solid fa-chart-line text-primary me-2"></i>Relatórios
+</h1>
+<p class="subtitulo-pagina">Análises completas e relatórios exportáveis do financeiro do casal</p>
+
+<!-- FILTROS + BOTÃO GERAR RELATÓRIO -->
+<div class="card p-4 mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small"><i class="fa-regular fa-calendar-check me-1 text-secondary"></i>Mês / Ano</label>
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="fa-regular fa-calendar text-secondary"></i></span>
+                <input type="month" class="form-control border-start-0" value="2026-08">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small"><i class="fa-solid fa-people-group me-1 text-secondary"></i>Quem</label>
+            <select class="form-select">
+                <option>👫 Ambos</option><option>👤 Apenas você</option><option>👤 Apenas parceira</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small"><i class="fa-solid fa-file-export me-1 text-secondary"></i>Formato</label>
+            <select class="form-select" id="formatoRelatorio">
+                <option value="csv">📄 CSV (Excel / Planilhas)</option>
+                <option value="txt">📝 TXT (Resumo)</option>
+                <option value="json">📋 JSON (Dados brutos)</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary w-100 py-2 fw-bold rounded-pill" onclick="gerarRelatorio()">
+                <i class="fa-solid fa-file-arrow-down me-2"></i>⬇️ Gerar Relatório
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- CARDS DE RESUMO -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3"><div class="card-resumo card-azul"><div class="icone"><i class="fa-solid fa-wallet"></i></div><div class="label">Saldo Final</div><div class="valor">R$ 1.250,00</div></div></div>
+    <div class="col-md-3"><div class="card-resumo card-verde"><div class="icone"><i class="fa-solid fa-arrow-down"></i></div><div class="label">Total Entradas</div><div class="valor text-success">R$ 3.850,00</div></div></div>
+    <div class="col-md-3"><div class="card-resumo card-vermelho"><div class="icone"><i class="fa-solid fa-arrow-up"></i></div><div class="label">Total Saídas</div><div class="valor text-danger">R$ 2.600,00</div></div></div>
+    <div class="col-md-3"><div class="card-resumo card-roxo"><div class="icone"><i class="fa-solid fa-basket-shopping"></i></div><div class="label">Qtde Transações</div><div class="valor" style="color:#A78BFA">42</div></div></div>
+</div>
+
+<!-- GRÁFICOS -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Gastos por Categoria</h5>
+            <div style="height:260px"><canvas id="grafCatRel"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-column text-primary me-2"></i>Evolução Mensal</h5>
+            <div style="height:260px"><canvas id="grafMesRel"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Quem gastou mais</h5>
+            <div style="height:220px"><canvas id="grafQuemRel"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-sparkles text-primary me-2"></i>Resumo Inteligente</h5>
+            <ul class="list-unstyled small lh-lg">
+                <li class="py-1 border-bottom"><i class="fa-solid fa-circle-check text-success me-2"></i>Seu saldo este mês foi <strong>positivo em R$ 1.250</strong></li>
+                <li class="py-1 border-bottom"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Saídas aumentaram <strong>15% em relação ao mês passado</strong></li>
+                <li class="py-1 border-bottom"><i class="fa-solid fa-house text-primary me-2"></i>Moradia representa <strong>38% dos seus gastos</strong></li>
+                <li class="py-1"><i class="fa-solid fa-heart text-danger me-2"></i>Adrian deve para parceira: <strong>R$ 150,00</strong></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- GRÁFICOS + FUNÇÃO GERAR RELATÓRIO -->
+<script>
+document.addEventListener('viewCarregada', () => {
+    Chart.defaults.color = '#8A93B2';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+
+    new Chart(document.getElementById('grafCatRel'), {
+        type: 'doughnut',
+        data: { labels:['Moradia','Alimentação','Transporte','Lazer','Outros'],
+            datasets:[{data:[1000,650,400,300,250], backgroundColor:['#3B82F6','#10B981','#F59E0B','#8B5CF6','#6B7280'], borderWidth:0}] },
+        options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{position:'bottom'}} }
+    });
+
+    new Chart(document.getElementById('grafMesRel'), {
+        type: 'bar',
+        data: { labels:['Mar','Abr','Mai','Jun','Jul','Ago'],
+            datasets:[
+                {label:'Entradas', data:[3200,3400,3500,3600,3550,3850], backgroundColor:'#10B981', borderRadius:8},
+                {label:'Saídas',   data:[2100,2200,2250,2300,2260,2600], backgroundColor:'#EF4444', borderRadius:8}
+            ]},
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}} }
+    });
+
+    new Chart(document.getElementById('grafQuemRel'), {
+        type: 'bar',
+        data: { labels:['Você','Parceira','Ambos'],
+            datasets:[{label:'Gastos R$', data:[1100,950,550], backgroundColor:['#3B82F6','#EC4899','#8B5CF6'], borderRadius:10}] },
+        options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }
+    });
+
+    // ========== ✅ FUNÇÃO GERAR RELATÓRIO (FUNCIONA DE VERDADE) ==========
+    window.gerarRelatorio = function() {
+        const formato = document.getElementById('formatoRelatorio').value;
+        const data = new Date().toISOString().slice(0,10);
+        let conteudo, nomeArq, tipo;
+
+        if (formato === 'csv') {
+            conteudo = 'Tipo,Categoria,Descricao,Data,Valor\nEntrada,Receita,Salario Adrian,05/08/2026,3850.00\nSaida,Moradia,Aluguel,01/08/2026,-1000.00\nSaida,Alimentacao,Supermercado,06/08/2026,-650.00\nSaida,Transporte,Combustivel,04/08/2026,-400.00';
+            nomeArq = `relatorio_syncus_${data}.csv`;
+            tipo = 'text/csv;charset=utf-8;';
+        } else if (formato === 'json') {
+            conteudo = JSON.stringify({
+                periodo:'Agosto/2026',
+                resumo:{ entradas:3850, saidas:2600, saldo:1250, transacoes:42 },
+                categorias:{ moradia:1000, alimentacao:650, transporte:400, lazer:300, outros:250 },
+                geradoEm: new Date().toISOString()
+            }, null, 2);
+            nomeArq = `relatorio_syncus_${data}.json`;
+            tipo = 'application/json';
+        } else {
+            conteudo = `═══════════════════════════════════\n   RELATÓRIO FINANCEIRO SYNCUS\n   Período: Agosto de 2026\n═══════════════════════════════════\n\n📥 ENTRADAS TOTAIS:    R$ 3.850,00\n📤 SAÍDAS TOTAIS:      R$ 2.600,00\n💵 SALDO FINAL:        R$ 1.250,00\n🔢 TRANSAÇÕES:         42\n\n📊 GASTOS POR CATEGORIA:\n  • Moradia........... R$ 1.000,00 (38%)\n  • Alimentação....... R$   650,00 (25%)\n  • Transporte........ R$   400,00 (15%)\n  • Lazer............. R$   300,00 (12%)\n  • Outros............ R$   250,00 (10%)\n\n═══════════════════════════════════\nGerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+            nomeArq = `relatorio_syncus_${data}.txt`;
+            tipo = 'text/plain;charset=utf-8;';
+        }
+
+        const blob = new Blob([conteudo], { type: tipo });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = nomeArq;
+        a.click();
+        showToast(`✅ Relatório ${formato.toUpperCase()} gerado e baixado!`, 'success');
+    };
+});
+</script>

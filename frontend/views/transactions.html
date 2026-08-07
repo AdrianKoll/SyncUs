@@ -1,0 +1,93 @@
+<h1 class="titulo-pagina mb-1">
+    <i class="fa-solid fa-right-left text-primary me-2"></i>Lançamentos
+</h1>
+<p class="subtitulo-pagina">Registre entradas e saídas do casal em segundos</p>
+
+<!-- FORMULÁRIO NOVO LANÇAMENTO -->
+<div class="card p-4 mb-4">
+    <h5 class="fw-bold mb-4">
+        <i class="fa-solid fa-circle-plus text-success me-2"></i>Novo Lançamento
+    </h5>
+    <form id="formLancamento">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label small"><i class="fa-solid fa-pen me-1 text-secondary"></i>Descrição</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="fa-solid fa-tag text-secondary"></i></span>
+                    <input class="form-control border-start-0" placeholder="Ex: Supermercado, Salário, Aluguel..." required>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small"><i class="fa-solid fa-coins me-1 text-secondary"></i>Valor (R$)</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0"><strong class="text-secondary">R$</strong></span>
+                    <input type="number" step="0.01" min="0" class="form-control border-start-0" placeholder="0,00" required>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small"><i class="fa-solid fa-arrow-trend-up me-1 text-secondary"></i>Tipo</label>
+                <select class="form-select" required>
+                    <option value="entrada"><i class="fa-solid fa-arrow-down"></i>📈 Entrada</option>
+                    <option value="saida"><i class="fa-solid fa-arrow-up"></i>📉 Saída</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small"><i class="fa-regular fa-calendar me-1 text-secondary"></i>Data</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="fa-regular fa-calendar text-secondary"></i></span>
+                    <input type="date" class="form-control border-start-0" required>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small"><i class="fa-solid fa-people-group me-1 text-secondary"></i>Pago por</label>
+                <select class="form-select" required>
+                    <option value="ambos"><i class="fa-solid fa-user-group"></i>👫 Ambos (50/50)</option>
+                    <option value="eu"><i class="fa-solid fa-user"></i>👤 Você</option>
+                    <option value="parceira"><i class="fa-solid fa-user"></i>👤 Parceira</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small"><i class="fa-solid fa-folder-tree me-1 text-secondary"></i>Categoria</label>
+                <select class="form-select">
+                    <option><i class="fa-solid fa-house"></i>🏠 Moradia</option>
+                    <option><i class="fa-solid fa-utensils"></i>🍽️ Alimentação</option>
+                    <option><i class="fa-solid fa-car"></i>🚗 Transporte</option>
+                    <option><i class="fa-solid fa-champagne-glasses"></i>🎉 Lazer</option>
+                    <option><i class="fa-solid fa-sack-dollar"></i>💼 Salário</option>
+                    <option><i class="fa-solid fa-ellipsis"></i>📦 Outros</option>
+                </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill">
+                    <i class="fa-solid fa-floppy-disk me-2"></i>💾 Salvar Lançamento
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- LANÇAMENTOS RECENTES -->
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold mb-0">
+            <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Lançamentos recentes
+        </h5>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="fa-solid fa-filter me-1"></i>Filtrar
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-dark table-borderless mb-0">
+            <thead>
+                <tr>
+                    <th>Data</th><th>Descrição</th><th>Categoria</th><th>Pago por</th><th class="text-end">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td class="text-secondary small">05/08</td><td><i class="fa-solid fa-arrow-down text-success me-2"></i>Salário Adrian</td><td><span class="badge bg-success-subtle text-success">Receita</span></td><td>👤 Você</td><td class="text-end tag-positiva">+ R$ 2.300,00</td></tr>
+                <tr><td class="text-secondary small">06/08</td><td><i class="fa-solid fa-cart-shopping text-danger me-2"></i>Supermercado</td><td>🍽️ Alimentação</td><td>👫 Ambos</td><td class="text-end tag-negativa">− R$ 350,00</td></tr>
+                <tr><td colspan="5" class="text-center text-secondary py-5">Mais lançamentos aparecerão aqui</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

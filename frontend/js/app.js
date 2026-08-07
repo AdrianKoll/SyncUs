@@ -1,63 +1,22 @@
-/* =========================
-   UTILITARIOS E CONFIG
-   ========================= */
+/* =====================================================
+   ✅ FUNÇÕES GLOBAIS - auth, utils, toast
+   ===================================================== */
 const API_URL = 'http://localhost:8000/api';
-const WS_URL = 'ws://localhost:8000/ws';
 
-// Formata valor para Real Brasileiro
-function formatCurrency(value) {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-    }).format(value);
-}
-
-// Formata data para DD/MM/AAAA
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-}
-
-// Mostra notificações (Toast)
-function showToast(message, type = 'primary') {
-    const toast = document.createElement('div');
-    toast.className = `toast btn-${type}`;
-    toast.innerText = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 500);
-    }, 3000);
-}
-
-// Verifica se o usuário está logado
+// =========================
+// AUTENTICAÇÃO
+// =========================
 async function checkAuth() {
     const token = localStorage.getItem('token');
-    if (!token) {
-        if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('register.html')) {
-            window.location.href = 'login.html';
-        }
-        return;
-    }
+    if (!token) { window.location.href = 'login.html'; return null; }
 
     try {
-        const response = await fetch(`${API_URL}/users/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+        const res = await fetch(`${API_URL}/users/me`, {
+            headers: { Authorization: `Bearer ${token}` }
         });
-        
-        if (!response.ok) {
-            logout();
-        } else {
-            const user = await response.json();
-            const greeting = document.getElementById('userGreeting');
-            if (greeting) greeting.innerText = `Olá, ${user.name}`;
-            return user;
-        }
-    } catch (err) {
-        console.error('Erro de autenticação', err);
-        logout();
-    }
+        if (!res.ok) { logout(); return null; }
+        return await res.json();
+    } catch (err) { logout(); return null; }
 }
 
 function logout() {
@@ -65,34 +24,52 @@ function logout() {
     window.location.href = 'login.html';
 }
 
-/* =========================
-   WEBSOCKET SYNC
-   ========================= */
-let socket = null;
-
-function setupWebSocket(roomId) {
-    if (!roomId || socket) return;
-    
-    socket = new WebSocket(`${WS_URL}/${roomId}`);
-    
-    socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log('Mensagem recebida via WS:', data);
-        showToast('Dados atualizados pela parceira', 'success');
-        
-        // Recarregar dados da página atual se necessário
-        if (typeof loadDashboardData === 'function') loadDashboardData();
-        if (typeof loadTransactions === 'function') loadTransactions();
-    };
-
-    socket.onclose = () => {
-        socket = null;
-        setTimeout(() => setupWebSocket(roomId), 5000);
-    };
+// =========================
+// UTILITÁRIOS DE FORMATAÇÃO
+// =========================
+function formatCurrency(valor) {
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    }).format(valor || 0);
 }
 
-function notifySync(roomId, type, payload = {}) {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(json.stringify({ type, ...payload }));
-    }
+function formatDate(data) {
+    return new Date(data).toLocaleDateString('pt-BR');
+}
+
+function iniciaisDoNome(nome) {
+    if (!nome) return '??';
+    return nome
+        .trim()
+        .split(' ')
+        .filter(p => p.length > 0)
+        .slice(0, 2)
+        .map(p => p[0].toUpperCase())
+        .join('');
+}
+
+// =========================
+// TOAST (MENSAGENS)
+// =========================
+function showToast(mensagem, tipo = 'info') {
+    const cores = {
+        success: 'linear-gradient(135deg,#059669,#10B981)',
+        danger:  'linear-gradient(135deg,#DC2626,#EF4444)',
+        warning: 'linear-gradient(135deg,#D97706,#F59E0B)',
+        info:    'linear-gradient(135deg,#2563EB,#3B82F6)'
+    };
+
+    const t = document.createElement('div');
+    t.className = 'toast-sync';
+    t.style.background = cores[tipo] || cores.info;
+    t.textContent = mensagem;
+    document.body.appendChild(t);
+
+    setTimeout(() => {
+        t.style.transition = 'opacity .3s, transform .3s';
+        t.style.opacity = '0';
+        t.style.transform = 'translateX(120%)';
+        setTimeout(() => t.remove(), 300);
+    }, 3200);
 }

@@ -1,0 +1,269 @@
+<h1 class="titulo-pagina mb-1">
+    <i class="fa-solid fa-gear text-primary me-2"></i>Configurações
+</h1>
+<p class="subtitulo-pagina">Gerencie vínculo, conta e dados do aplicativo</p>
+
+<!-- =====================================================
+     BLOCO 1: CONEXÃO COM A PARCEIRA
+     ===================================================== -->
+<div class="card p-4 mb-4">
+    <h5 class="fw-bold mb-4">
+        <i class="fa-solid fa-link text-primary me-2"></i>Conexão com sua parceira
+    </h5>
+    <div class="row g-4">
+        <!-- SEU TOKEN -->
+        <div class="col-md-6">
+            <label class="form-label small">
+                <i class="fa-solid fa-key me-1 text-secondary"></i>Seu token de conexão
+            </label>
+            <div class="input-group mb-2">
+                <span class="input-group-text bg-transparent border-end-0">
+                    <i class="fa-solid fa-shield-halved text-secondary"></i>
+                </span>
+                <input type="text" id="myToken" class="form-control border-start-0" value="Carregando..." readonly>
+                <button class="btn btn-outline-primary" onclick="copyToken()">
+                    <i class="fa-regular fa-copy me-1"></i>Copiar
+                </button>
+            </div>
+            <button class="btn btn-info rounded-pill btn-sm" onclick="refreshToken()">
+                <i class="fa-solid fa-rotate me-1"></i>Gerar novo token
+            </button>
+            <div class="text-secondary small mt-2">
+                <i class="fa-regular fa-clock me-1"></i>Validade: 7 dias · Compartilhe apenas com sua parceira
+            </div>
+        </div>
+
+        <!-- TOKEN DELA -->
+        <div class="col-md-6">
+            <label class="form-label small">
+                <i class="fa-solid fa-paper-plane me-1 text-secondary"></i>Token da sua parceira
+            </label>
+            <div class="input-group mb-2">
+                <span class="input-group-text bg-transparent border-end-0">
+                    <i class="fa-solid fa-envelope text-secondary"></i>
+                </span>
+                <input type="text" id="partnerToken" class="form-control border-start-0" placeholder="Cole o token dela aqui...">
+                <button class="btn btn-success rounded-end" onclick="enviarPedidoVinculo()">
+                    <i class="fa-solid fa-paper-plane me-1"></i>Enviar pedido
+                </button>
+            </div>
+            <div id="connectionStatus" class="small">
+                Status: <span id="statusPedido" class="text-secondary">Aguardando...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================================
+     CARD PARCEIRO CONECTADO
+     ===================================================== -->
+<div class="card p-4 mb-4 border-start border-5 border-success d-none" id="cardParceiro">
+    <h5 class="fw-bold mb-4 text-success">
+        <i class="fa-solid fa-circle-check me-2"></i>Você está conectado(a) com:
+    </h5>
+    <div class="d-flex flex-wrap align-items-center gap-4">
+        <div class="avatar-saldo" style="width:72px;height:72px;font-size:1.5rem" id="avatarP">??</div>
+        <div class="flex-grow-1">
+            <p class="mb-1"><strong class="text-secondary me-2">Nome:</strong><span id="nomeP">-</span></p>
+            <p class="mb-1"><strong class="text-secondary me-2">E-mail:</strong><span id="emailP">-</span></p>
+            <p class="mb-0"><strong class="text-secondary me-2">Conectado desde:</strong><span id="dataP">-</span></p>
+        </div>
+        <div class="d-flex flex-column gap-2">
+            <button class="btn btn-primary rounded-pill px-4" onclick="visualizarPerfilParceiro()">
+                <i class="fa-regular fa-eye me-1"></i>Ver perfil
+            </button>
+            <button class="btn btn-danger rounded-pill px-4" onclick="desvincularParceiro()">
+                <i class="fa-solid fa-link-slash me-1"></i>Desvincular
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================================
+     BLOCO 2: MINHA CONTA
+     ===================================================== -->
+<div class="card p-4 mb-4">
+    <h5 class="fw-bold mb-4">
+        <i class="fa-regular fa-user text-primary me-2"></i>Minha Conta
+    </h5>
+    <form id="profileForm">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label small">
+                    <i class="fa-solid fa-signature me-1 text-secondary"></i>Nome completo
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="fa-regular fa-user text-secondary"></i>
+                    </span>
+                    <input type="text" id="profileName" class="form-control border-start-0">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small">
+                    <i class="fa-regular fa-envelope me-1 text-secondary"></i>E-mail
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="fa-regular fa-envelope text-secondary"></i>
+                    </span>
+                    <input type="email" id="profileEmail" class="form-control border-start-0" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small">
+                    <i class="fa-solid fa-lock me-1 text-secondary"></i>Nova senha
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="fa-solid fa-key text-secondary"></i>
+                    </span>
+                    <input type="password" class="form-control border-start-0" placeholder="••••••••">
+                </div>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2">
+                    <i class="fa-solid fa-floppy-disk me-2"></i>Salvar dados da conta
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- =====================================================
+     BLOCO 3: DADOS DO APP (BOTÕES GRADIENTE IGUAL DASHBOARD)
+     ===================================================== -->
+<div class="card p-4">
+    <h5 class="fw-bold mb-4">
+        <i class="fa-solid fa-database text-primary me-2"></i>Dados do Aplicativo
+    </h5>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <a class="acao-rapida acao-azul d-block text-decoration-none" href="#/transactions" onclick="navegar('transactions')">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icone-acao"><i class="fa-solid fa-folder-plus"></i></div>
+                    <div>
+                        <div class="fw-bold">Gerenciar Categorias</div>
+                        <div class="small opacity-75">Crie e edite categorias</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a class="acao-rapida acao-verde d-block text-decoration-none" href="#/reports" onclick="navegar('reports')">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icone-acao"><i class="fa-solid fa-file-export"></i></div>
+                    <div>
+                        <div class="fw-bold">Exportar Dados</div>
+                        <div class="small opacity-75">CSV, JSON ou TXT</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <button class="acao-rapida acao-vermelha w-100 border-0 text-start" onclick="excluirTodosDados()">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icone-acao"><i class="fa-solid fa-trash-can"></i></div>
+                    <div>
+                        <div class="fw-bold">Excluir Todos os Dados</div>
+                        <div class="small opacity-75">Ação irreversível</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================================
+     SCRIPT (TODAS FUNÇÕES INTACTAS)
+     ===================================================== -->
+<script>
+document.addEventListener('viewCarregada', async () => {
+    const user = await checkAuth();
+    if (!user) return;
+    document.getElementById('myToken').value = user.connection_token || 'Nenhum token gerado';
+    document.getElementById('profileName').value = user.name;
+    document.getElementById('profileEmail').value = user.email;
+});
+
+window.copyToken = () => {
+    navigator.clipboard.writeText(document.getElementById('myToken').value);
+    showToast('Token copiado!', 'success');
+};
+
+window.refreshToken = async () => {
+    // ✅ CERTO: /api/users/token/refresh
+    const r = await fetch(`${API_URL}/users/token/refresh`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    if (r.ok) {
+        const u = await r.json();
+        document.getElementById('myToken').value = u.connection_token || u.token || 'Nenhum';
+        showToast('Novo token gerado!', 'success');
+    } else showToast('Erro ao gerar token', 'danger');
+};
+
+window.enviarPedidoVinculo = async () => {
+    const tok = document.getElementById('partnerToken').value.trim();
+    if (!tok) return showToast('Cole o token primeiro', 'warning');
+
+    // ✅ CERTO: /api/couple/invite/send  +  body {token}
+    const r = await fetch(`${API_URL}/couple/invite/send`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ token: tok })
+    });
+    const d = await r.json();
+    if (r.ok) {
+        showToast('Pedido enviado!', 'success');
+        document.getElementById('statusPedido').textContent = '✅ Aguardando aceite';
+        document.getElementById('partnerToken').value = '';
+    } else showToast(d.detail || 'Erro', 'danger');
+};
+
+window.desvincularParceiro = async () => {
+    if (!confirm('Tem certeza?')) return;
+    // ✅ CERTO: /api/couple/disconnect (não /users/disconnect)
+    await fetch(`${API_URL}/couple/disconnect`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    showToast('Vínculo desfeito', 'warning');
+    setTimeout(() => location.reload(), 900);
+};
+
+// ✅ Adicione essa função para carregar dados do parceiro automaticamente
+async function carregarParceiro() {
+    try {
+        const r = await fetch(`${API_URL}/couple/partner`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (!r.ok) return;
+        const p = await r.json();
+        if (p && p.name) {
+            document.getElementById('cardParceiro').classList.remove('d-none');
+            document.getElementById('avatarP').textContent = iniciaisDoNome(p.name);
+            document.getElementById('nomeP').textContent = p.name;
+            document.getElementById('emailP').textContent = p.email || '-';
+            document.getElementById('dataP').textContent = formatDate(p.connected_at || new Date());
+        }
+    } catch(e){}
+}
+
+// Chame no viewCarregada:
+document.addEventListener('viewCarregada', async () => {
+    const user = await checkAuth();
+    if (!user) return;
+    document.getElementById('myToken').value = user.connection_token || 'Nenhum token gerado';
+    document.getElementById('profileName').value = user.name;
+    document.getElementById('profileEmail').value = user.email;
+    await carregarParceiro(); // ✅ nova linha
+});
+</script>

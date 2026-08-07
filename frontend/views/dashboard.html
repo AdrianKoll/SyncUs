@@ -1,0 +1,340 @@
+<!-- =====================================================
+     TÍTULO + SELETOR DE MÊS
+     ===================================================== -->
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+    <div>
+        <h1 class="titulo-pagina mb-1">
+            Resumo Financeiro <i class="fa-solid fa-sparkles text-primary small ms-1"></i>
+        </h1>
+        <p class="subtitulo-pagina mb-0">Visão geral das finanças do casal em <strong>Agosto de 2026</strong></p>
+    </div>
+    <select class="form-select w-auto bg-transparent border rounded-pill px-3">
+        <option>Agosto de 2026</option>
+        <option>Julho de 2026</option>
+        <option>Junho de 2026</option>
+    </select>
+</div>
+
+<!-- =====================================================
+     4 CARDS DE RESUMO (TOPO)
+     ===================================================== -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card-resumo card-azul">
+            <div class="icone"><i class="fa-solid fa-wallet"></i></div>
+            <div class="label">Saldo Total Conjunto</div>
+            <div class="valor">R$ 1.250,00</div>
+            <div class="delta text-primary"><i class="fa-solid fa-arrow-trend-up"></i> 12% vs mês anterior</div>
+            <canvas id="sparkSaldo"></canvas>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card-resumo card-verde">
+            <div class="icone"><i class="fa-solid fa-arrow-down"></i></div>
+            <div class="label">Entradas do Mês</div>
+            <div class="valor text-success">R$ 3.850,00</div>
+            <div class="delta text-success"><i class="fa-solid fa-arrow-trend-up"></i> 8% vs mês anterior</div>
+            <canvas id="sparkEntradas"></canvas>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card-resumo card-vermelho">
+            <div class="icone"><i class="fa-solid fa-arrow-up"></i></div>
+            <div class="label">Saídas do Mês</div>
+            <div class="valor text-danger">R$ 2.600,00</div>
+            <div class="delta text-danger"><i class="fa-solid fa-arrow-trend-up"></i> 15% vs mês anterior</div>
+            <canvas id="sparkSaidas"></canvas>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card-resumo card-roxo">
+            <div class="icone"><i class="fa-solid fa-people-group"></i></div>
+            <div class="label">Dívidas Mútuas</div>
+            <div class="valor" style="color:#A78BFA">Tudo em dia</div>
+            <div class="delta" style="color:#A78BFA"><i class="fa-solid fa-shield-halved"></i> Nenhuma pendência</div>
+            <canvas id="sparkDividas"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================================
+     LINHA 2: GRÁFICO FLUXO + AÇÕES RÁPIDAS
+     ===================================================== -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-xl-8">
+        <div class="card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h5 class="mb-0 fw-bold">Fluxo Financeiro</h5>
+                <div class="d-flex align-items-center gap-3">
+                    <small class="d-flex align-items-center gap-1"><span class="d-inline-block rounded-circle bg-success" style="width:10px;height:10px"></span>Entradas</small>
+                    <small class="d-flex align-items-center gap-1"><span class="d-inline-block rounded-circle bg-danger"  style="width:10px;height:10px"></span>Saídas</small>
+                    <select class="form-select form-select-sm bg-transparent border rounded-pill px-3 w-auto">
+                        <option>Mensal</option><option>Semanal</option>
+                    </select>
+                </div>
+            </div>
+            <div style="height:280px"><canvas id="graficoFluxo"></canvas></div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card p-4 h-100 position-relative overflow-hidden">
+            <h5 class="mb-3 fw-bold">Ações rápidas</h5>
+
+            <a href="#/transactions" class="acao-rapida acao-verde" onclick="navegar('transactions')">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icone-acao"><i class="fa-solid fa-plus"></i></div>
+                    <div>
+                        <div class="fw-bold">Nova Entrada</div>
+                        <div class="small opacity-75">Registrar uma nova entrada</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+
+            <a href="#/transactions" class="acao-rapida acao-vermelha" onclick="navegar('transactions')">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icone-acao"><i class="fa-solid fa-minus"></i></div>
+                    <div>
+                        <div class="fw-bold">Nova Saída</div>
+                        <div class="small opacity-75">Registrar uma nova saída</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+
+            <a href="#/history" class="acao-rapida acao-azul" onclick="navegar('history')">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icone-acao"><i class="fa-solid fa-list"></i></div>
+                    <div>
+                        <div class="fw-bold">Ver Histórico</div>
+                        <div class="small opacity-75">Ver todas as transações</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+
+            <!-- Ilustração -->
+            <div class="text-end mt-3 pe-2" style="opacity:.9">
+                <i class="fa-solid fa-wallet" style="font-size:4.5rem;color:rgba(96,165,250,.18)"></i>
+                <i class="fa-solid fa-coins position-absolute" style="right:30px;bottom:30px;font-size:1.6rem;color:#F59E0B"></i>
+                <i class="fa-solid fa-circle position-absolute" style="right:70px;bottom:80px;font-size:.5rem;color:#3B82F6;opacity:.6"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================================
+     LINHA 3: CATEGORIAS + ÚLTIMAS TRANSAÇÕES + SALDO
+     ===================================================== -->
+<div class="row g-4">
+    <!-- GASTOS POR CATEGORIA -->
+    <div class="col-12 col-xl-4">
+        <div class="card p-4 h-100">
+            <h5 class="mb-3 fw-bold">Gastos por categoria</h5>
+            <div class="d-flex justify-content-center mb-3">
+                <div style="width:220px;height:220px"><canvas id="graficoCategorias"></canvas></div>
+            </div>
+            <ul class="list-unstyled small mb-0">
+                <li class="d-flex justify-content-between py-1"><span><span class="d-inline-block rounded-circle me-2" style="width:10px;height:10px;background:#3B82F6"></span>Moradia</span><strong>R$ 1.000,00 <span class="text-secondary">38%</span></strong></li>
+                <li class="d-flex justify-content-between py-1"><span><span class="d-inline-block rounded-circle me-2" style="width:10px;height:10px;background:#10B981"></span>Alimentação</span><strong>R$ 650,00 <span class="text-secondary">25%</span></strong></li>
+                <li class="d-flex justify-content-between py-1"><span><span class="d-inline-block rounded-circle me-2" style="width:10px;height:10px;background:#F59E0B"></span>Transporte</span><strong>R$ 400,00 <span class="text-secondary">15%</span></strong></li>
+                <li class="d-flex justify-content-between py-1"><span><span class="d-inline-block rounded-circle me-2" style="width:10px;height:10px;background:#8B5CF6"></span>Lazer</span><strong>R$ 300,00 <span class="text-secondary">12%</span></strong></li>
+                <li class="d-flex justify-content-between py-1"><span><span class="d-inline-block rounded-circle me-2" style="width:10px;height:10px;background:#6B7280"></span>Outros</span><strong>R$ 250,00 <span class="text-secondary">10%</span></strong></li>
+            </ul>
+            <button class="btn btn-sm btn-outline-secondary w-100 mt-3 rounded-pill">Ver todas categorias</button>
+        </div>
+    </div>
+
+    <!-- ÚLTIMAS TRANSAÇÕES -->
+    <div class="col-12 col-xl-5">
+        <div class="card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0 fw-bold">Últimas transações</h5>
+                <a href="#/history" class="small text-decoration-none" onclick="navegar('history')">Ver todas</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td style="width:36px"><div class="icone text-success rounded-2" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(16,185,129,.12)"><i class="fa-solid fa-arrow-down"></i></div></td>
+                            <td><div class="fw-semibold">Salário Adrian</div><div class="text-secondary small">Receita</div></td>
+                            <td class="text-secondary small">05/08/2026</td>
+                            <td class="text-end tag-positiva">+ R$ 2.300,00</td>
+                        </tr>
+                        <tr>
+                            <td><div class="icone text-success rounded-2" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(16,185,129,.12)"><i class="fa-solid fa-arrow-down"></i></div></td>
+                            <td><div class="fw-semibold">Salário Parceira</div><div class="text-secondary small">Receita</div></td>
+                            <td class="text-secondary small">05/08/2026</td>
+                            <td class="text-end tag-positiva">+ R$ 1.550,00</td>
+                        </tr>
+                        <tr>
+                            <td><div class="icone text-danger rounded-2" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(239,68,68,.12)"><i class="fa-solid fa-cart-shopping"></i></div></td>
+                            <td><div class="fw-semibold">Supermercado</div><div class="text-secondary small">Alimentação</div></td>
+                            <td class="text-secondary small">06/08/2026</td>
+                            <td class="text-end tag-negativa">− R$ 350,00</td>
+                        </tr>
+                        <tr>
+                            <td><div class="icone text-danger rounded-2" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(239,68,68,.12)"><i class="fa-solid fa-utensils"></i></div></td>
+                            <td><div class="fw-semibold">Almoço</div><div class="text-secondary small">Alimentação</div></td>
+                            <td class="text-secondary small">05/08/2026</td>
+                            <td class="text-end tag-negativa">− R$ 80,00</td>
+                        </tr>
+                        <tr>
+                            <td><div class="icone text-danger rounded-2" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(239,68,68,.12)"><i class="fa-solid fa-gas-pump"></i></div></td>
+                            <td><div class="fw-semibold">Combustível</div><div class="text-secondary small">Transporte</div></td>
+                            <td class="text-secondary small">04/08/2026</td>
+                            <td class="text-end tag-negativa">− R$ 200,00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SALDO ENTRE VOCÊS -->
+    <div class="col-12 col-xl-3">
+        <div class="card p-4 h-100">
+            <h5 class="mb-3 fw-bold">Saldo entre vocês</h5>
+            <div class="saldo-entre">
+                <div class="avatares-saldo">
+                    <div class="avatar-saldo">AK</div>
+                    <i class="fa-solid fa-right-left arrow-saldo"></i>
+                    <div class="avatar-saldo" style="background:linear-gradient(135deg,#EC4899,#8B5CF6)">PK</div>
+                </div>
+                <div class="text-secondary small mb-1">Adrian deve para sua parceira</div>
+                <div class="valor-saldo">R$ 150,00</div>
+                <button class="btn btn-outline-primary w-100 mt-3 rounded-pill">Ver detalhes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DICA -->
+<div class="mt-4 small text-secondary d-flex align-items-center gap-2">
+    <i class="fa-regular fa-lightbulb text-warning"></i>
+    Dica: Mantenha suas categorias organizadas para ter uma visão mais clara dos seus gastos.
+</div>
+
+<!-- =====================================================
+     SCRIPT - INICIALIZA TODOS OS GRÁFICOS
+     ===================================================== -->
+<script>
+document.addEventListener('viewCarregada', () => {
+    Chart.defaults.color = '#8A93B2';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+
+    // ---------- SPARKLINES DOS 4 CARDS ----------
+    const sparkCfg = (cor, dados) => ({
+        type: 'line',
+        data: { labels: Array(dados.length).fill(''), datasets: [{
+            data: dados, borderColor: cor, backgroundColor: cor + '22',
+            fill: true, tension: .4, borderWidth: 2, pointRadius: 0
+        }]},
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: { x: { display: false }, y: { display: false } }
+        }
+    });
+
+    new Chart(document.getElementById('sparkSaldo'),    sparkCfg('#60A5FA', [2,4,3,5,6,8,7,9,11,12]));
+    new Chart(document.getElementById('sparkEntradas'), sparkCfg('#34D399', [3,4,5,4,6,7,6,8,9,10]));
+    new Chart(document.getElementById('sparkSaidas'),   sparkCfg('#F87171', [4,5,4,6,5,7,8,9,10,12]));
+    new Chart(document.getElementById('sparkDividas'),  sparkCfg('#A78BFA', [5,5,5,5,5,5,5,5,5,5]));
+
+    // ---------- GRÁFICO DE FLUXO (linhas duplas) ----------
+    const dias = ['01/08','05/08','10/08','15/08','20/08','25/08','31/08'];
+    new Chart(document.getElementById('graficoFluxo'), {
+        type: 'line',
+        data: {
+            labels: dias,
+            datasets: [
+                {
+                    label: 'Entradas',
+                    data: [1800, 2000, 2400, 3300, 3100, 3500, 3850],
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16,185,129,.12)',
+                    tension: .35,
+                    fill: true,
+                    borderWidth: 2.5,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#10B981'
+                },
+                {
+                    label: 'Saídas',
+                    data: [1200, 1400, 1300, 1850, 1900, 2200, 2600],
+                    borderColor: '#EF4444',
+                    backgroundColor: 'rgba(239,68,68,.10)',
+                    tension: .35,
+                    fill: true,
+                    borderWidth: 2.5,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#EF4444'
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#151D35', borderColor: 'rgba(255,255,255,.06)',
+                    borderWidth: 1, padding: 12, titleColor: '#fff', bodyColor: '#CBD5E1',
+                    callbacks: { label: c => `${c.dataset.label}: ${formatCurrency(c.parsed.y)}` }
+                }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#8A93B2' } },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,.04)' },
+                    ticks: { color: '#8A93B2', callback: v => 'R$ ' + (v/1000) + 'k' }
+                }
+            }
+        }
+    });
+
+    // ---------- ROSCA DE CATEGORIAS ----------
+    new Chart(document.getElementById('graficoCategorias'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Moradia','Alimentação','Transporte','Lazer','Outros'],
+            datasets: [{
+                data: [1000, 650, 400, 300, 250],
+                backgroundColor: ['#3B82F6','#10B981','#F59E0B','#8B5CF6','#6B7280'],
+                borderWidth: 0,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#151D35', borderColor: 'rgba(255,255,255,.06)', borderWidth: 1,
+                    callbacks: { label: c => ` ${c.label}: ${formatCurrency(c.parsed)}` }
+                }
+            }
+        },
+        plugins: [{
+            id: 'totalCentro',
+            afterDraw(chart) {
+                const { ctx, chartArea: { width, height, top, left } } = chart;
+                ctx.save();
+                ctx.font = 'bold 14px Inter';
+                ctx.fillStyle = '#8A93B2';
+                ctx.textAlign = 'center';
+                ctx.fillText('Total', left + width/2, top + height/2 - 6);
+                ctx.font = 'bold 18px Inter';
+                ctx.fillStyle = '#fff';
+                ctx.fillText(formatCurrency(2600), left + width/2, top + height/2 + 16);
+                ctx.restore();
+            }
+        }]
+    });
+});
+</script>

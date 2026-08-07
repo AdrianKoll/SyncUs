@@ -1,0 +1,80 @@
+<h1 class="titulo-pagina mb-1">
+    <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Histórico
+</h1>
+<p class="subtitulo-pagina">Todas as transações do casal, com filtros e exportação</p>
+
+<!-- FILTROS -->
+<div class="card p-4 mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small"><i class="fa-regular fa-calendar-check me-1 text-secondary"></i>Data início</label>
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="fa-regular fa-calendar text-secondary"></i></span>
+                <input type="date" class="form-control border-start-0">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small"><i class="fa-regular fa-calendar-xmark me-1 text-secondary"></i>Data fim</label>
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="fa-regular fa-calendar text-secondary"></i></span>
+                <input type="date" class="form-control border-start-0">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small"><i class="fa-solid fa-filter me-1 text-secondary"></i>Tipo</label>
+            <select class="form-select">
+                <option>Todos</option><option>📈 Apenas entradas</option><option>📉 Apenas saídas</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small"><i class="fa-solid fa-folder me-1 text-secondary"></i>Categoria</label>
+            <select class="form-select"><option>Todas</option><option>Moradia</option><option>Alimentação</option></select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button class="btn btn-primary flex-fill rounded-pill">
+                <i class="fa-solid fa-magnifying-glass me-1"></i>🔍 Filtrar
+            </button>
+            <button class="btn btn-success rounded-pill" title="Exportar CSV" onclick="exportarHistoricoCSV()">
+                <i class="fa-solid fa-file-csv"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- TABELA -->
+<div class="card p-0 overflow-hidden">
+    <table class="table table-dark mb-0">
+        <thead>
+            <tr>
+                <th><i class="fa-regular fa-calendar me-1"></i>Data</th>
+                <th><i class="fa-solid fa-tag me-1"></i>Descrição</th>
+                <th><i class="fa-solid fa-folder-tree me-1"></i>Categoria</th>
+                <th><i class="fa-solid fa-arrow-right-arrow-left me-1"></i>Tipo</th>
+                <th><i class="fa-solid fa-people-group me-1"></i>Pago por</th>
+                <th class="text-end"><i class="fa-solid fa-coins me-1"></i>Valor</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td class="text-secondary small">05/08/2026</td><td>Salário Adrian</td><td>💼 Receita</td><td><span class="badge bg-success">Entrada</span></td><td>👤 Você</td><td class="text-end tag-positiva">+ R$ 2.300,00</td></tr>
+            <tr><td class="text-secondary small">06/08/2026</td><td>Supermercado</td><td>🍽️ Alimentação</td><td><span class="badge bg-danger">Saída</span></td><td>👫 Ambos</td><td class="text-end tag-negativa">− R$ 350,00</td></tr>
+            <tr><td colspan="6" class="text-center text-secondary py-5">
+                <i class="fa-regular fa-folder-open display-6 d-block mb-2 opacity-25"></i>
+                Nenhum registro encontrado no período
+            </td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('viewCarregada', () => {
+    window.exportarHistoricoCSV = function() {
+        const csv = 'Data,Descricao,Categoria,Tipo,PagoPor,Valor\n05/08/2026,Salario Adrian,Receita,Entrada,Voce,2300.00\n06/08/2026,Supermercado,Alimentacao,Saida,Ambos,-350.00';
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `historico_syncus_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        showToast('✅ Histórico exportado com sucesso!', 'success');
+    };
+});
+</script>
