@@ -1,8 +1,9 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from ..core.database import Base
+from app.core.database import Base  # ✅ CORRIGIDO O CAMINHO DA IMPORTAÇÃO
 import datetime
+
 
 class User(Base):
     __tablename__ = "users"
@@ -20,6 +21,7 @@ class User(Base):
     
     room = relationship("Room", back_populates="users", foreign_keys=[room_id])
 
+
 class Room(Base):
     __tablename__ = "rooms"
     id = Column(Integer, primary_key=True, index=True)
@@ -28,6 +30,7 @@ class Room(Base):
     users = relationship("User", back_populates="room", foreign_keys=[User.room_id])
     transactions = relationship("Transaction", back_populates="room")
     categories = relationship("Category", back_populates="room")
+
 
 class Transaction(Base):
     __tablename__ = "transactions"
@@ -47,6 +50,7 @@ class Transaction(Base):
     room = relationship("Room", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
 
+
 class Category(Base):
     __tablename__ = "categories"
     id = Column(Integer, primary_key=True, index=True)
@@ -55,3 +59,54 @@ class Category(Base):
     
     room = relationship("Room", back_populates="categories")
     transactions = relationship("Transaction", back_populates="category")
+
+
+# ==============================================
+# ✅ NOVOS MODELS — Convites, Conexões e Notificações
+# ==============================================
+
+class CoupleInvite(Base):
+    """Pedido de vínculo pendente de aprovação"""
+    __tablename__ = "couple_invites"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token_used = Column(String, nullable=False)
+    status = Column(String, default="pending")  # pending / accepted / rejected
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    sender = relationship("User", foreign_keys=[sender_id])
+    receiver = relationship("User", foreign_keys=[receiver_id])
+
+
+class CoupleConnection(Base):
+    """Vínculo ativo e confirmado do casal"""
+    __tablename__ = "couple_connections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user2_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    is_active = Column(Boolean, default=True)
+    connected_at = Column(DateTime, default=datetime.datetime.utcnow)
+    disconnected_at = Column(DateTime, nullable=True)
+
+    user1 = relationship("User", foreign_keys=[user1_id])
+    user2 = relationship("User", foreign_keys=[user2_id])
+
+
+class Notification(Base):
+    """Notificações do sininho"""
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    type = Column(String, nullable=False)  # invite_income / invite_accepted / invite_rejected / disconnect
+    related_id = Column(Integer, nullable=True)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    user = relationship("User")
