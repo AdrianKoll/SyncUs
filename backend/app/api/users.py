@@ -20,9 +20,12 @@ def update_user_me(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if user_update.current_password and user_update.password:
-        if not verify_password(user_update.current_password, current_user.hashed_password):
-            raise HTTPException(status_code=400, detail="Senha atual incorreta")
+    # Sempre exigir senha atual para qualquer alteração na conta
+    if not user_update.current_password:
+        raise HTTPException(status_code=400, detail="Senha atual é obrigatória para alterar dados da conta")
+    
+    if not verify_password(user_update.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Senha atual incorreta")
     
     return user_repository.update_user(db, current_user, user_update)
 

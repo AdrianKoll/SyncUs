@@ -685,3 +685,168 @@ input.form-control::placeholder { color: #5a6380 !important; }
     margin-bottom: 14px;
     display: none;
 }
+
+/* ============================================
+   NOTIFICAÇÕES - Sininho (DESIGN MELHORADO)
+   ============================================ */
+.caixa-notif {
+    width: 360px;
+    max-height: 480px;
+    overflow-y: auto;
+    border: none;
+    box-shadow: 0 12px 48px rgba(0,0,0,.18);
+    border-radius: 14px;
+    padding: 0;
+}
+
+/* Cabeçalho */
+.caixa-notif li:first-child {
+    background: linear-gradient(135deg, rgba(13,148,136,.06), rgba(59,130,246,.04));
+    border-bottom: 1px solid rgba(0,0,0,.06) !important;
+}
+
+/* Cada item de notificação */
+.caixa-notif .notif-item {
+    transition: background .15s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.caixa-notif .notif-item:hover {
+    background: rgba(13,148,136,.05) !important;
+}
+
+/* Notificação não lida - ponto de destaque */
+.caixa-notif .notif-item:not(.notif-lida)::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13,148,136,.15);
+}
+
+/* Ajuste para o ponto não sobrepor o conteúdo */
+.caixa-notif .notif-item:not(.notif-lida) > div {
+    margin-left: 8px;
+}
+
+/* Notificação lida - mais suave */
+.caixa-notif .notif-lida {
+    opacity: 0.75;
+}
+
+/* Botão de apagar - PEQUENO e só aparece no HOVER */
+.caixa-notif .btn-apagar-notif {
+    opacity: 0;
+    visibility: hidden;
+    transition: all .15s ease;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0;
+    font-size: 12px;
+}
+
+.caixa-notif .notif-item:hover .btn-apagar-notif {
+    opacity: 1;
+    visibility: visible;
+}
+
+.caixa-notif .btn-apagar-notif:hover {
+    background: rgba(220,38,38,.1);
+    color: #dc2626;
+}
+
+/* Contador no sininho */
+.badge-contador {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: linear-gradient(135deg, #DC2626, #EF4444);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    box-shadow: 0 2px 6px rgba(220,38,38,.4);
+}
+
+/* Botões de ação dentro da notificação */
+.caixa-notif .btn-acao-notif {
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 20px;
+    transition: all .15s ease;
+}
+
+.caixa-notif .btn-acao-notif:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+
+/* Ícones das notificações */
+.caixa-notif .icone-notif {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Scrollbar mais bonita */
+.caixa-notif::-webkit-scrollbar {
+    width: 6px;
+}
+
+.caixa-notif::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.caixa-notif::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,.15);
+    border-radius: 3px;
+}
+
+.caixa-notif::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,.25);
+}
+
+/* Botão "Limpar lidas" */
+.btn-limpar-lidas {
+    font-size: 11px;
+    color: #6b7280;
+    transition: color .15s;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.btn-limpar-lidas:hover {
+    color: #dc2626;
+    background: rgba(220,38,38,.08);
+}

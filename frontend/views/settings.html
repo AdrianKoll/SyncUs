@@ -55,26 +55,62 @@
 </div>
 
 <!-- =====================================================
-     CARD PARCEIRO CONECTADO
+     CARD PARCEIRO CONECTADO (sempre visível)
      ===================================================== -->
-<div class="card p-4 mb-4 border-start border-5 border-success d-none" id="cardParceiro">
-    <h5 class="fw-bold mb-4 text-success">
-        <i class="fa-solid fa-circle-check me-2"></i>Você está conectado(a) com:
+<div class="card p-4 mb-4" id="cardParceiro">
+    <h5 class="fw-bold mb-4" id="tituloParceiro">
+        <i class="fa-solid fa-circle-check me-2 text-success"></i>Parceira conectada
     </h5>
-    <div class="d-flex flex-wrap align-items-center gap-4">
-        <div class="avatar-saldo" style="width:72px;height:72px;font-size:1.5rem" id="avatarP">??</div>
-        <div class="flex-grow-1">
-            <p class="mb-1"><strong class="text-secondary me-2">Nome:</strong><span id="nomeP">-</span></p>
-            <p class="mb-1"><strong class="text-secondary me-2">E-mail:</strong><span id="emailP">-</span></p>
-            <p class="mb-0"><strong class="text-secondary me-2">Conectado desde:</strong><span id="dataP">-</span></p>
+    
+    <!-- ESTADO 1: Conectado - mostra dados da parceira -->
+    <div id="parceiroConectado" class="d-none">
+        <div class="d-flex flex-wrap align-items-center gap-4">
+            <div class="avatar-saldo" style="width:72px;height:72px;font-size:1.5rem;border:3px solid #10B981;" id="avatarP">??</div>
+            <div class="flex-grow-1">
+                <p class="mb-1 fs-5">
+                    <i class="fa-solid fa-user me-2 text-secondary"></i>
+                    <strong id="nomeP">-</strong>
+                </p>
+                <p class="mb-1">
+                    <i class="fa-regular fa-envelope me-2 text-secondary"></i>
+                    <span id="emailP">-</span>
+                </p>
+                <p class="mb-0 text-success small">
+                    <i class="fa-solid fa-calendar-check me-1"></i>
+                    Conectada desde: <span id="dataP">-</span>
+                </p>
+            </div>
+            <div class="d-flex flex-column gap-2">
+                <button class="btn btn-primary rounded-pill px-4" onclick="visualizarPerfilParceiro()">
+                    <i class="fa-regular fa-eye me-1"></i>Ver perfil
+                </button>
+                <button class="btn btn-danger rounded-pill px-4" onclick="desvincularParceiro()">
+                    <i class="fa-solid fa-link-slash me-1"></i>Desvincular
+                </button>
+            </div>
         </div>
-        <div class="d-flex flex-column gap-2">
-            <button class="btn btn-primary rounded-pill px-4" onclick="visualizarPerfilParceiro()">
-                <i class="fa-regular fa-eye me-1"></i>Ver perfil
-            </button>
-            <button class="btn btn-danger rounded-pill px-4" onclick="desvincularParceiro()">
-                <i class="fa-solid fa-link-slash me-1"></i>Desvincular
-            </button>
+    </div>
+    
+    <!-- ESTADO 2: Não conectado - mostra aviso -->
+    <div id="semConexao">
+        <div class="d-flex align-items-center gap-4 py-3">
+            <div style="width:72px;height:72px;border-radius:50%;background:rgba(128,128,128,.08);display:flex;align-items:center;justify-content:center;border:2px dashed rgba(128,128,128,.3);">
+                <i class="fa-regular fa-user text-secondary fs-3"></i>
+            </div>
+            <div class="flex-grow-1">
+                <p class="mb-1 fs-5 text-secondary">
+                    <strong>Nenhuma parceira conectada ainda</strong>
+                </p>
+                <p class="mb-0 text-secondary small">
+                    <i class="fa-solid fa-info-circle me-1"></i>
+                    Compartilhe seu token acima ou cole o token dela para estabelecer a conexão.
+                </p>
+            </div>
+            <div class="text-center">
+                <div class="rounded-pill px-3 py-1 bg-warning bg-opacity-10 text-warning small fw-bold">
+                    <i class="fa-solid fa-hourglass-half me-1"></i>Aguardando
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -120,6 +156,7 @@
             <div class="col-md-6">
                 <label class="form-label small">
                     <i class="fa-solid fa-lock me-1 text-secondary"></i>Nova senha
+                    <span class="text-muted fw-normal">(opcional - deixe em branco para manter)</span>
                 </label>
                 <div class="input-group">
                     <span class="input-group-text bg-transparent border-end-0">
@@ -272,6 +309,13 @@ window.desvincularParceiro = async () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
     showToast('Vínculo desfeito com sucesso', 'warning');
+    
+    // Atualiza o card para estado "sem conexão" imediatamente
+    document.getElementById('tituloParceiro').innerHTML = '<i class="fa-solid fa-link-slash me-2 text-secondary"></i>Status da conexão';
+    document.getElementById('cardParceiro').classList.remove('border-start', 'border-5', 'border-success');
+    document.getElementById('parceiroConectado').classList.add('d-none');
+    document.getElementById('semConexao').classList.remove('d-none');
+    
     setTimeout(() => location.reload(), 900);
 };
 
@@ -286,16 +330,46 @@ async function carregarParceiro() {
         const r = await fetch(`${API_URL}/couple/partner`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        if (!r.ok) return;
-        const p = await r.json();
-        if (p && p.name) {
-            document.getElementById('cardParceiro').classList.remove('d-none');
-            document.getElementById('avatarP').textContent = iniciaisDoNome(p.name);
-            document.getElementById('nomeP').textContent = p.name;
-            document.getElementById('emailP').textContent = p.email || '-';
-            document.getElementById('dataP').textContent = formatDate(p.connected_at || new Date());
+        
+        const titulo = document.getElementById('tituloParceiro');
+        const conectadoDiv = document.getElementById('parceiroConectado');
+        const semConexaoDiv = document.getElementById('semConexao');
+        const cardParceiro = document.getElementById('cardParceiro');
+        
+        if (r.ok) {
+            const dados = await r.json();
+            
+            // Backend retorna: { conectado: true/false, parceiro: {...} }
+            if (dados.conectado && dados.parceiro) {
+                const p = dados.parceiro;
+                
+                // TEM CONEXÃO - mostra dados da parceira
+                titulo.innerHTML = '<i class="fa-solid fa-circle-check me-2 text-success"></i>Parceira conectada';
+                cardParceiro.classList.add('border-start', 'border-5', 'border-success');
+                conectadoDiv.classList.remove('d-none');
+                semConexaoDiv.classList.add('d-none');
+                
+                document.getElementById('avatarP').textContent = iniciaisDoNome(p.nome);
+                document.getElementById('nomeP').textContent = p.nome;
+                document.getElementById('emailP').textContent = p.email || '-';
+                document.getElementById('dataP').textContent = p.conectado_em || '-';
+                return;
+            }
         }
-    } catch(e){}
+        
+        // SEM CONEXÃO - mostra aviso
+        titulo.innerHTML = '<i class="fa-solid fa-link-slash me-2 text-secondary"></i>Status da conexão';
+        cardParceiro.classList.remove('border-start', 'border-5', 'border-success');
+        conectadoDiv.classList.add('d-none');
+        semConexaoDiv.classList.remove('d-none');
+        
+    } catch(e) {
+        // Em caso de erro, também mostra estado sem conexão
+        document.getElementById('tituloParceiro').innerHTML = '<i class="fa-solid fa-link-slash me-2 text-secondary"></i>Status da conexão';
+        document.getElementById('cardParceiro').classList.remove('border-start', 'border-5', 'border-success');
+        document.getElementById('parceiroConectado').classList.add('d-none');
+        document.getElementById('semConexao').classList.remove('d-none');
+    }
 }
 
 // =====================================================
