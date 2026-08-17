@@ -3,6 +3,7 @@
 </h1>
 <p class="subtitulo-pagina">Registre entradas e saídas do casal em segundos</p>
 
+
 <!-- FORMULÁRIO NOVO LANÇAMENTO -->
 <div class="card p-4 mb-4">
     <h5 class="fw-bold mb-4">
@@ -10,6 +11,7 @@
     </h5>
     <form id="formLancamento">
         <div class="row g-3">
+            <!-- DESCRIÇÃO -->
             <div class="col-md-4">
                 <label class="form-label small"><i class="fa-solid fa-pen me-1 text-secondary"></i>Descrição</label>
                 <div class="input-group">
@@ -17,6 +19,8 @@
                     <input class="form-control border-start-0" placeholder="Ex: Supermercado, Salário, Aluguel..." required>
                 </div>
             </div>
+
+            <!-- VALOR -->
             <div class="col-md-2">
                 <label class="form-label small"><i class="fa-solid fa-coins me-1 text-secondary"></i>Valor (R$)</label>
                 <div class="input-group">
@@ -24,13 +28,22 @@
                     <input type="number" step="0.01" min="0" class="form-control border-start-0" placeholder="0,00" required>
                 </div>
             </div>
+
+            <!-- TIPO (ícone troca automaticamente) -->
             <div class="col-md-2">
                 <label class="form-label small"><i class="fa-solid fa-arrow-trend-up me-1 text-secondary"></i>Tipo</label>
-                <select class="form-select" required>
-                    <option value="entrada"><i class="fa-solid fa-arrow-down"></i>📈 Entrada</option>
-                    <option value="saida"><i class="fa-solid fa-arrow-up"></i>📉 Saída</option>
-                </select>
+                <div class="input-group">
+                    <span class="input-group-text" id="iconeTipo">
+                        <i class="bi bi-arrow-down-circle" style="color: #10B981;"></i>
+                    </span>
+                    <select class="form-select" required id="tipo">
+                        <option value="entrada" selected>Entrada</option>
+                        <option value="saida">Saída</option>
+                    </select>
+                </div>
             </div>
+
+            <!-- DATA -->
             <div class="col-md-2">
                 <label class="form-label small"><i class="fa-regular fa-calendar me-1 text-secondary"></i>Data</label>
                 <div class="input-group">
@@ -38,33 +51,50 @@
                     <input type="date" class="form-control border-start-0" required>
                 </div>
             </div>
+
+            <!-- PAGO POR (ícone troca automaticamente) -->
             <div class="col-md-2">
                 <label class="form-label small"><i class="fa-solid fa-people-group me-1 text-secondary"></i>Pago por</label>
-                <select class="form-select" required>
-                    <option value="ambos"><i class="fa-solid fa-user-group"></i>👫 Ambos (50/50)</option>
-                    <option value="eu"><i class="fa-solid fa-user"></i>👤 Você</option>
-                    <option value="parceira"><i class="fa-solid fa-user"></i>👤 Parceira</option>
-                </select>
+                <div class="input-group">
+                    <span class="input-group-text" id="iconePagoPor">
+                        <i class="bi bi-people-fill" style="color: #3B82F6;"></i>
+                    </span>
+                    <select class="form-select" required id="pago_por">
+                        <option value="ambos" selected>Ambos (50/50)</option>
+                        <option value="eu">Você</option>
+                        <option value="parceira">Parceiro(a)</option>
+                    </select>
+                </div>
             </div>
+
+            <!-- CATEGORIA -->
             <div class="col-md-6">
                 <label class="form-label small"><i class="fa-solid fa-folder-tree me-1 text-secondary"></i>Categoria</label>
-                <select class="form-select">
-                    <option><i class="fa-solid fa-house"></i>🏠 Moradia</option>
-                    <option><i class="fa-solid fa-utensils"></i>🍽️ Alimentação</option>
-                    <option><i class="fa-solid fa-car"></i>🚗 Transporte</option>
-                    <option><i class="fa-solid fa-champagne-glasses"></i>🎉 Lazer</option>
-                    <option><i class="fa-solid fa-sack-dollar"></i>💼 Salário</option>
-                    <option><i class="fa-solid fa-ellipsis"></i>📦 Outros</option>
-                </select>
+                <div class="input-group">
+                    <span class="input-group-text" id="iconeCategoria">
+                        <i class="bi bi-house-fill" style="color: #3B82F6;"></i>
+                    </span>
+                    <select class="form-select" id="categoria">
+                        <option value="moradia" selected>Moradia</option>
+                        <option value="alimentacao">Alimentação</option>
+                        <option value="transporte">Transporte</option>
+                        <option value="lazer">Lazer</option>
+                        <option value="salario">Salário</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
             </div>
+
+            <!-- BOTÃO SALVAR -->
             <div class="col-md-6 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill">
-                    <i class="fa-solid fa-floppy-disk me-2"></i>💾 Salvar Lançamento
+                    <i class="fa-solid fa-floppy-disk me-2"></i>Salvar Lançamento
                 </button>
             </div>
         </div>
     </form>
 </div>
+
 
 <!-- LANÇAMENTOS RECENTES -->
 <div class="card p-4">
@@ -80,14 +110,98 @@
         <table class="table table-dark table-borderless mb-0">
             <thead>
                 <tr>
-                    <th>Data</th><th>Descrição</th><th>Categoria</th><th>Pago por</th><th class="text-end">Valor</th>
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th>Categoria</th>
+                    <th>Pago por</th>
+                    <th class="text-end">Valor</th>
                 </tr>
             </thead>
             <tbody>
-                <tr><td class="text-secondary small">05/08</td><td><i class="fa-solid fa-arrow-down text-success me-2"></i>Salário Adrian</td><td><span class="badge bg-success-subtle text-success">Receita</span></td><td>👤 Você</td><td class="text-end tag-positiva">+ R$ 2.300,00</td></tr>
-                <tr><td class="text-secondary small">06/08</td><td><i class="fa-solid fa-cart-shopping text-danger me-2"></i>Supermercado</td><td>🍽️ Alimentação</td><td>👫 Ambos</td><td class="text-end tag-negativa">− R$ 350,00</td></tr>
-                <tr><td colspan="5" class="text-center text-secondary py-5">Mais lançamentos aparecerão aqui</td></tr>
+                <tr>
+                    <td class="text-secondary small">05/08</td>
+                    <td><i class="fa-solid fa-arrow-down text-success me-2"></i>Salário Adrian</td>
+                    <td><span class="badge bg-success-subtle text-success">Receita</span></td>
+                    <td><i class="bi bi-person-fill text-success me-1"></i>Você</td>
+                    <td class="text-end tag-positiva">+ R$ 2.300,00</td>
+                </tr>
+                <tr>
+                    <td class="text-secondary small">06/08</td>
+                    <td><i class="fa-solid fa-cart-shopping text-danger me-2"></i>Supermercado</td>
+                    <td><i class="bi bi-egg-fried text-warning me-1"></i>Alimentação</td>
+                    <td><i class="bi bi-people-fill text-primary me-1"></i>Ambos</td>
+                    <td class="text-end tag-negativa">− R$ 350,00</td>
+                </tr>
+                <tr>
+                    <td colspan="5" class="text-center text-secondary py-5">
+                        Mais lançamentos aparecerão aqui
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
 </div>
+
+
+<!-- ==============================================
+     JAVASCRIPT — TROCA AUTOMÁTICA DE ÍCONES
+     ============================================== -->
+<script>
+// ==========================
+// TROCA ÍCONE DO CAMPO "TIPO"
+// ==========================
+const selectTipo = document.getElementById('tipo');
+const iconeTipo = document.getElementById('iconeTipo');
+
+function trocarIconeTipo(valor) {
+    if (valor === 'entrada') {
+        iconeTipo.innerHTML = '<i class="bi bi-arrow-down-circle" style="color: #10B981;"></i>';
+    } else {
+        iconeTipo.innerHTML = '<i class="bi bi-arrow-up-circle" style="color: #EF4444;"></i>';
+    }
+}
+selectTipo.addEventListener('change', e => trocarIconeTipo(e.target.value));
+
+
+// ==========================
+// TROCA ÍCONE DO CAMPO "PAGO POR"
+// ==========================
+const selectPagoPor = document.getElementById('pago_por');
+const iconePagoPor = document.getElementById('iconePagoPor');
+
+function trocarIconePagoPor(valor) {
+    switch(valor) {
+        case 'ambos':
+            iconePagoPor.innerHTML = '<i class="bi bi-people-fill" style="color: #3B82F6;"></i>';
+            break;
+        case 'eu':
+            iconePagoPor.innerHTML = '<i class="bi bi-person-fill" style="color: #10B981;"></i>';
+            break;
+        case 'parceira':
+            iconePagoPor.innerHTML = '<i class="bi bi-person-heart" style="color: #8B5CF6;"></i>';
+            break;
+    }
+}
+selectPagoPor.addEventListener('change', e => trocarIconePagoPor(e.target.value));
+
+
+// ==========================
+// TROCA ÍCONE DO CAMPO "CATEGORIA"
+// ==========================
+const selectCategoria = document.getElementById('categoria');
+const iconeCategoria = document.getElementById('iconeCategoria');
+
+function trocarIconeCategoria(valor) {
+    const icones = {
+        moradia:    { icone: 'bi bi-house-fill',      cor: '#3B82F6' },
+        alimentacao:{ icone: 'bi bi-egg-fried',       cor: '#F59E0B' },
+        transporte: { icone: 'bi bi-car-front-fill',  cor: '#6B7280' },
+        lazer:      { icone: 'bi bi-music-note-beamed', cor: '#8B5CF6' },
+        salario:    { icone: 'bi bi-cash-stack',      cor: '#10B981' },
+        outros:     { icone: 'bi bi-box-seam-fill',   cor: '#94A3B8' }
+    };
+    const escolhido = icones[valor];
+    iconeCategoria.innerHTML = `<i class="${escolhido.icone}" style="color: ${escolhido.cor};"></i>`;
+}
+selectCategoria.addEventListener('change', e => trocarIconeCategoria(e.target.value));
+</script>

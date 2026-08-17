@@ -3,6 +3,7 @@
 </h1>
 <p class="subtitulo-pagina">Gerencie vínculo, conta e dados do aplicativo</p>
 
+
 <!-- =====================================================
      BLOCO 1: CONEXÃO COM A PARCEIRA
      ===================================================== -->
@@ -11,7 +12,7 @@
         <i class="fa-solid fa-link text-primary me-2"></i>Conexão com sua parceira
     </h5>
     <div class="row g-4">
-        <!-- SEU TOKEN -->
+        <!-- SEU TOKEN + BOTÃO COPIAR (grudados) -->
         <div class="col-md-6">
             <label class="form-label small">
                 <i class="fa-solid fa-key me-1 text-secondary"></i>Seu token de conexão
@@ -20,8 +21,8 @@
                 <span class="input-group-text bg-transparent border-end-0">
                     <i class="fa-solid fa-shield-halved text-secondary"></i>
                 </span>
-                <input type="text" id="myToken" class="form-control border-start-0" value="Carregando..." readonly>
-                <button class="btn btn-outline-primary" onclick="copyToken()">
+                <input type="text" id="myToken" class="form-control border-start-0 border-end-0" value="Carregando..." readonly>
+                <button class="btn btn-outline-primary rounded-end" onclick="copyToken()">
                     <i class="fa-regular fa-copy me-1"></i>Copiar
                 </button>
             </div>
@@ -33,7 +34,7 @@
             </div>
         </div>
 
-        <!-- TOKEN DELA -->
+        <!-- TOKEN DELA + BOTÃO ENVIAR (grudados) -->
         <div class="col-md-6">
             <label class="form-label small">
                 <i class="fa-solid fa-paper-plane me-1 text-secondary"></i>Token da sua parceira
@@ -42,7 +43,7 @@
                 <span class="input-group-text bg-transparent border-end-0">
                     <i class="fa-solid fa-envelope text-secondary"></i>
                 </span>
-                <input type="text" id="partnerToken" class="form-control border-start-0" placeholder="Cole o token dela aqui...">
+                <input type="text" id="partnerToken" class="form-control border-start-0 border-end-0" placeholder="Cole o token dela aqui...">
                 <button class="btn btn-success rounded-end" onclick="enviarPedidoVinculo()">
                     <i class="fa-solid fa-paper-plane me-1"></i>Enviar pedido
                 </button>
@@ -53,6 +54,7 @@
         </div>
     </div>
 </div>
+
 
 <!-- =====================================================
      CARD PARCEIRO CONECTADO
@@ -78,6 +80,7 @@
         </div>
     </div>
 </div>
+
 
 <!-- =====================================================
      BLOCO 2: MINHA CONTA
@@ -130,8 +133,9 @@
     </form>
 </div>
 
+
 <!-- =====================================================
-     BLOCO 3: DADOS DO APP (BOTÕES GRADIENTE IGUAL DASHBOARD)
+     BLOCO 3: DADOS DO APP
      ===================================================== -->
 <div class="card p-4">
     <h5 class="fw-bold mb-4">
@@ -177,25 +181,32 @@
     </div>
 </div>
 
+
 <!-- =====================================================
-     SCRIPT (TODAS FUNÇÕES INTACTAS)
+     SCRIPT (organizado, sem evento duplicado)
      ===================================================== -->
 <script>
 document.addEventListener('viewCarregada', async () => {
     const user = await checkAuth();
     if (!user) return;
+
+    // Preenche dados do usuário
     document.getElementById('myToken').value = user.connection_token || 'Nenhum token gerado';
     document.getElementById('profileName').value = user.name;
     document.getElementById('profileEmail').value = user.email;
+
+    // Carrega dados do parceiro se conectado
+    await carregarParceiro();
 });
+
 
 window.copyToken = () => {
     navigator.clipboard.writeText(document.getElementById('myToken').value);
     showToast('Token copiado!', 'success');
 };
 
+
 window.refreshToken = async () => {
-    // ✅ CERTO: /api/users/token/refresh
     const r = await fetch(`${API_URL}/users/token/refresh`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -207,11 +218,11 @@ window.refreshToken = async () => {
     } else showToast('Erro ao gerar token', 'danger');
 };
 
+
 window.enviarPedidoVinculo = async () => {
     const tok = document.getElementById('partnerToken').value.trim();
     if (!tok) return showToast('Cole o token primeiro', 'warning');
 
-    // ✅ CERTO: /api/couple/invite/send  +  body {token}
     const r = await fetch(`${API_URL}/couple/invite/send`, {
         method: 'POST',
         headers: {
@@ -223,23 +234,35 @@ window.enviarPedidoVinculo = async () => {
     const d = await r.json();
     if (r.ok) {
         showToast('Pedido enviado!', 'success');
-        document.getElementById('statusPedido').textContent = '✅ Aguardando aceite';
+        document.getElementById('statusPedido').textContent = 'Aguardando aceite';
         document.getElementById('partnerToken').value = '';
     } else showToast(d.detail || 'Erro', 'danger');
 };
 
+
+window.visualizarPerfilParceiro = () => {
+    showToast('Abrindo perfil da parceira...', 'info');
+};
+
+
 window.desvincularParceiro = async () => {
-    if (!confirm('Tem certeza?')) return;
-    // ✅ CERTO: /api/couple/disconnect (não /users/disconnect)
+    if (!confirm('Tem certeza que quer desvincular? Essa ação não pode ser desfeita.')) return;
     await fetch(`${API_URL}/couple/disconnect`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
-    showToast('Vínculo desfeito', 'warning');
+    showToast('Vínculo desfeito com sucesso', 'warning');
     setTimeout(() => location.reload(), 900);
 };
 
-// ✅ Adicione essa função para carregar dados do parceiro automaticamente
+
+window.excluirTodosDados = () => {
+    if (confirm('CERTEZA MESMA? Todos os lançamentos serão apagados permanentemente!')) {
+        showToast('Dados excluídos (simulação)', 'danger');
+    }
+};
+
+
 async function carregarParceiro() {
     try {
         const r = await fetch(`${API_URL}/couple/partner`, {
@@ -256,14 +279,4 @@ async function carregarParceiro() {
         }
     } catch(e){}
 }
-
-// Chame no viewCarregada:
-document.addEventListener('viewCarregada', async () => {
-    const user = await checkAuth();
-    if (!user) return;
-    document.getElementById('myToken').value = user.connection_token || 'Nenhum token gerado';
-    document.getElementById('profileName').value = user.name;
-    document.getElementById('profileEmail').value = user.email;
-    await carregarParceiro(); // ✅ nova linha
-});
 </script>

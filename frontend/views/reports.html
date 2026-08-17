@@ -3,9 +3,11 @@
 </h1>
 <p class="subtitulo-pagina">Análises completas e relatórios exportáveis do financeiro do casal</p>
 
+
 <!-- FILTROS + BOTÃO GERAR RELATÓRIO -->
 <div class="card p-4 mb-4">
     <div class="row g-3 align-items-end">
+        <!-- MÊS / ANO -->
         <div class="col-md-3">
             <label class="form-label small"><i class="fa-regular fa-calendar-check me-1 text-secondary"></i>Mês / Ano</label>
             <div class="input-group">
@@ -13,27 +15,46 @@
                 <input type="month" class="form-control border-start-0" value="2026-08">
             </div>
         </div>
+
+        <!-- QUEM (ícone troca automaticamente) -->
         <div class="col-md-3">
             <label class="form-label small"><i class="fa-solid fa-people-group me-1 text-secondary"></i>Quem</label>
-            <select class="form-select">
-                <option>👫 Ambos</option><option>👤 Apenas você</option><option>👤 Apenas parceira</option>
-            </select>
+            <div class="input-group">
+                <span class="input-group-text" id="iconeQuem">
+                    <i class="bi bi-people-fill" style="color: #3B82F6;"></i>
+                </span>
+                <select class="form-select" id="filtroQuem">
+                    <option value="ambos" selected>Ambos</option>
+                    <option value="voce">Apenas você</option>
+                    <option value="parceira">Apenas parceira</option>
+                </select>
+            </div>
         </div>
+
+        <!-- FORMATO (ícone troca automaticamente) -->
         <div class="col-md-3">
             <label class="form-label small"><i class="fa-solid fa-file-export me-1 text-secondary"></i>Formato</label>
-            <select class="form-select" id="formatoRelatorio">
-                <option value="csv">📄 CSV (Excel / Planilhas)</option>
-                <option value="txt">📝 TXT (Resumo)</option>
-                <option value="json">📋 JSON (Dados brutos)</option>
-            </select>
+            <div class="input-group">
+                <span class="input-group-text" id="iconeFormato">
+                    <i class="bi bi-filetype-csv" style="color: #10B981;"></i>
+                </span>
+                <select class="form-select" id="formatoRelatorio">
+                    <option value="csv" selected>CSV (Excel / Planilhas)</option>
+                    <option value="txt">TXT (Resumo)</option>
+                    <option value="json">JSON (Dados brutos)</option>
+                </select>
+            </div>
         </div>
+
+        <!-- BOTÃO GERAR -->
         <div class="col-md-3">
             <button class="btn btn-primary w-100 py-2 fw-bold rounded-pill" onclick="gerarRelatorio()">
-                <i class="fa-solid fa-file-arrow-down me-2"></i>⬇️ Gerar Relatório
+                <i class="fa-solid fa-file-arrow-down me-2"></i>Gerar Relatório
             </button>
         </div>
     </div>
 </div>
+
 
 <!-- CARDS DE RESUMO -->
 <div class="row g-4 mb-4">
@@ -42,6 +63,7 @@
     <div class="col-md-3"><div class="card-resumo card-vermelho"><div class="icone"><i class="fa-solid fa-arrow-up"></i></div><div class="label">Total Saídas</div><div class="valor text-danger">R$ 2.600,00</div></div></div>
     <div class="col-md-3"><div class="card-resumo card-roxo"><div class="icone"><i class="fa-solid fa-basket-shopping"></i></div><div class="label">Qtde Transações</div><div class="valor" style="color:#A78BFA">42</div></div></div>
 </div>
+
 
 <!-- GRÁFICOS -->
 <div class="row g-4 mb-4">
@@ -58,6 +80,7 @@
         </div>
     </div>
 </div>
+
 
 <div class="row g-4">
     <div class="col-md-6">
@@ -79,12 +102,63 @@
     </div>
 </div>
 
-<!-- GRÁFICOS + FUNÇÃO GERAR RELATÓRIO -->
+
+<!-- ==============================================
+     JAVASCRIPT — ÍCONES DINÂMICOS + GRÁFICOS + GERAR RELATÓRIO
+     ============================================== -->
 <script>
 document.addEventListener('viewCarregada', () => {
     Chart.defaults.color = '#8A93B2';
     Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
 
+
+    // ==========================
+    // TROCA ÍCONE DO FILTRO "QUEM"
+    // ==========================
+    const filtroQuem = document.getElementById('filtroQuem');
+    const iconeQuem = document.getElementById('iconeQuem');
+
+    function trocarIconeQuem(valor) {
+        switch(valor) {
+            case 'ambos':
+                iconeQuem.innerHTML = '<i class="bi bi-people-fill" style="color: #3B82F6;"></i>';
+                break;
+            case 'voce':
+                iconeQuem.innerHTML = '<i class="bi bi-person-fill" style="color: #10B981;"></i>';
+                break;
+            case 'parceira':
+                iconeQuem.innerHTML = '<i class="bi bi-person-heart" style="color: #8B5CF6;"></i>';
+                break;
+        }
+    }
+    filtroQuem.addEventListener('change', e => trocarIconeQuem(e.target.value));
+
+
+    // ==========================
+    // TROCA ÍCONE DO FILTRO "FORMATO"
+    // ==========================
+    const filtroFormato = document.getElementById('formatoRelatorio');
+    const iconeFormato = document.getElementById('iconeFormato');
+
+    function trocarIconeFormato(valor) {
+        switch(valor) {
+            case 'csv':
+                iconeFormato.innerHTML = '<i class="bi bi-filetype-csv" style="color: #10B981;"></i>';
+                break;
+            case 'txt':
+                iconeFormato.innerHTML = '<i class="bi bi-filetype-txt" style="color: #3B82F6;"></i>';
+                break;
+            case 'json':
+                iconeFormato.innerHTML = '<i class="bi bi-filetype-json" style="color: #F59E0B;"></i>';
+                break;
+        }
+    }
+    filtroFormato.addEventListener('change', e => trocarIconeFormato(e.target.value));
+
+
+    // ==========================
+    // GRÁFICOS
+    // ==========================
     new Chart(document.getElementById('grafCatRel'), {
         type: 'doughnut',
         data: { labels:['Moradia','Alimentação','Transporte','Lazer','Outros'],
@@ -109,7 +183,10 @@ document.addEventListener('viewCarregada', () => {
         options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }
     });
 
-    // ========== ✅ FUNÇÃO GERAR RELATÓRIO (FUNCIONA DE VERDADE) ==========
+
+    // ==========================
+    // FUNÇÃO GERAR RELATÓRIO
+    // ==========================
     window.gerarRelatorio = function() {
         const formato = document.getElementById('formatoRelatorio').value;
         const data = new Date().toISOString().slice(0,10);
@@ -129,7 +206,27 @@ document.addEventListener('viewCarregada', () => {
             nomeArq = `relatorio_syncus_${data}.json`;
             tipo = 'application/json';
         } else {
-            conteudo = `═══════════════════════════════════\n   RELATÓRIO FINANCEIRO SYNCUS\n   Período: Agosto de 2026\n═══════════════════════════════════\n\n📥 ENTRADAS TOTAIS:    R$ 3.850,00\n📤 SAÍDAS TOTAIS:      R$ 2.600,00\n💵 SALDO FINAL:        R$ 1.250,00\n🔢 TRANSAÇÕES:         42\n\n📊 GASTOS POR CATEGORIA:\n  • Moradia........... R$ 1.000,00 (38%)\n  • Alimentação....... R$   650,00 (25%)\n  • Transporte........ R$   400,00 (15%)\n  • Lazer............. R$   300,00 (12%)\n  • Outros............ R$   250,00 (10%)\n\n═══════════════════════════════════\nGerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+            // TXT — sem emojis, limpo e profissional
+            conteudo = `===========================================
+   RELATORIO FINANCEIRO SYNCUS
+   Periodo: Agosto de 2026
+===========================================
+
+ENTRADAS TOTAIS:    R$ 3.850,00
+SAIDAS TOTAIS:      R$ 2.600,00
+SALDO FINAL:        R$ 1.250,00
+TRANSACOES:         42
+
+GASTOS POR CATEGORIA:
+  - Moradia........... R$ 1.000,00 (38%)
+  - Alimentacao....... R$   650,00 (25%)
+  - Transporte........ R$   400,00 (15%)
+  - Lazer............. R$   300,00 (12%)
+  - Outros............ R$   250,00 (10%)
+
+===========================================
+Gerado em: ${new Date().toLocaleString('pt-BR')}
+===========================================`;
             nomeArq = `relatorio_syncus_${data}.txt`;
             tipo = 'text/plain;charset=utf-8;';
         }
@@ -139,7 +236,7 @@ document.addEventListener('viewCarregada', () => {
         a.href = URL.createObjectURL(blob);
         a.download = nomeArq;
         a.click();
-        showToast(`✅ Relatório ${formato.toUpperCase()} gerado e baixado!`, 'success');
+        showToast(`Relatorio ${formato.toUpperCase()} gerado e baixado!`, 'success');
     };
 });
 </script>

@@ -509,6 +509,43 @@ input.form-control::placeholder { color: #5a6380 !important; }
     border-bottom-left-radius: 0 !important;
     margin-left: -1px;
 }
+/* ==============================================
+   GRUDA ÍCONE NA CAIXA DE SELEÇÃO (igual campo Valor)
+   ============================================== */
+
+/* Quando o ícone vem ANTES de um select → remove borda direita e raio direito */
+.input-group:has(select.form-select) .input-group-text {
+    border-right: none !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+/* O select que vem DEPOIS do ícone → remove borda esquerda e raio esquerdo */
+.input-group .input-group-text + select.form-select {
+    border-left: none !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    margin-left: -1px !important; /* elimina o espaço entre eles */
+}
+
+/* ==============================================
+   GRUDA INPUT NO BOTÃO (igual campo Valor e selects)
+   ============================================== */
+
+/* Quando o input vem ANTES de um botão no input-group → remove borda direita e raio direito */
+.input-group .form-control.border-end-0 + .btn,
+.input-group .form-control.border-end-0 + button {
+    border-left: none !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    margin-left: -1px !important; /* elimina o espaço entre eles */
+}
+
+/* Garante que o input com borda final removida não tenha raio direito */
+.input-group .form-control.border-end-0 {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
 /* =====================================================
    ✅ TELAS DE AUTENTICAÇÃO (LOGIN / CADASTRO)
    ===================================================== */
