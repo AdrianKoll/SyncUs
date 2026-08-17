@@ -3,7 +3,6 @@
 </h1>
 <p class="subtitulo-pagina">Gerencie vínculo, conta e dados do aplicativo</p>
 
-
 <!-- =====================================================
      BLOCO 1: CONEXÃO COM A PARCEIRA
      ===================================================== -->
@@ -55,7 +54,6 @@
     </div>
 </div>
 
-
 <!-- =====================================================
      CARD PARCEIRO CONECTADO
      ===================================================== -->
@@ -81,7 +79,6 @@
     </div>
 </div>
 
-
 <!-- =====================================================
      BLOCO 2: MINHA CONTA
      ===================================================== -->
@@ -89,6 +86,13 @@
     <h5 class="fw-bold mb-4">
         <i class="fa-regular fa-user text-primary me-2"></i>Minha Conta
     </h5>
+    
+    <!-- ALERTA DE SEGURANÇA -->
+    <div class="alert alert-info small py-2 px-3 mb-4" role="alert">
+        <i class="fa-solid fa-shield-halved me-2 text-primary"></i>
+        <strong>Segurança:</strong> Para sua proteção, é necessário confirmar sua <strong>senha atual</strong> antes de salvar qualquer alteração nos dados da conta.
+    </div>
+    
     <form id="profileForm">
         <div class="row g-3">
             <div class="col-md-6">
@@ -99,7 +103,7 @@
                     <span class="input-group-text bg-transparent border-end-0">
                         <i class="fa-regular fa-user text-secondary"></i>
                     </span>
-                    <input type="text" id="profileName" class="form-control border-start-0">
+                    <input type="text" id="profileName" class="form-control border-start-0" required>
                 </div>
             </div>
             <div class="col-md-6">
@@ -121,18 +125,40 @@
                     <span class="input-group-text bg-transparent border-end-0">
                         <i class="fa-solid fa-key text-secondary"></i>
                     </span>
-                    <input type="password" class="form-control border-start-0" placeholder="••••••••">
+                    <input type="password" id="newPassword" class="form-control border-start-0" placeholder="••••••••">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small">
+                    <i class="fa-solid fa-lock me-1 text-secondary"></i>Confirmar nova senha
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="fa-solid fa-key text-secondary"></i>
+                    </span>
+                    <input type="password" id="confirmPassword" class="form-control border-start-0" placeholder="••••••••">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small">
+                    <i class="fa-solid fa-shield-halved me-1 text-secondary"></i>Senha atual
+                    <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="fa-solid fa-lock text-secondary"></i>
+                    </span>
+                    <input type="password" id="currentPassword" class="form-control border-start-0" placeholder="••••••••" required>
                 </div>
             </div>
             <div class="col-md-6 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2">
+                <button type="submit" id="btnSalvarPerfil" class="btn btn-primary w-100 rounded-pill fw-bold py-2">
                     <i class="fa-solid fa-floppy-disk me-2"></i>Salvar dados da conta
                 </button>
             </div>
         </div>
     </form>
 </div>
-
 
 <!-- =====================================================
      BLOCO 3: DADOS DO APP
@@ -181,7 +207,6 @@
     </div>
 </div>
 
-
 <!-- =====================================================
      SCRIPT (organizado, sem evento duplicado)
      ===================================================== -->
@@ -199,12 +224,10 @@ document.addEventListener('viewCarregada', async () => {
     await carregarParceiro();
 });
 
-
 window.copyToken = () => {
     navigator.clipboard.writeText(document.getElementById('myToken').value);
     showToast('Token copiado!', 'success');
 };
-
 
 window.refreshToken = async () => {
     const r = await fetch(`${API_URL}/users/token/refresh`, {
@@ -217,7 +240,6 @@ window.refreshToken = async () => {
         showToast('Novo token gerado!', 'success');
     } else showToast('Erro ao gerar token', 'danger');
 };
-
 
 window.enviarPedidoVinculo = async () => {
     const tok = document.getElementById('partnerToken').value.trim();
@@ -239,11 +261,9 @@ window.enviarPedidoVinculo = async () => {
     } else showToast(d.detail || 'Erro', 'danger');
 };
 
-
 window.visualizarPerfilParceiro = () => {
     showToast('Abrindo perfil da parceira...', 'info');
 };
-
 
 window.desvincularParceiro = async () => {
     if (!confirm('Tem certeza que quer desvincular? Essa ação não pode ser desfeita.')) return;
@@ -255,13 +275,11 @@ window.desvincularParceiro = async () => {
     setTimeout(() => location.reload(), 900);
 };
 
-
 window.excluirTodosDados = () => {
     if (confirm('CERTEZA MESMA? Todos os lançamentos serão apagados permanentemente!')) {
         showToast('Dados excluídos (simulação)', 'danger');
     }
 };
-
 
 async function carregarParceiro() {
     try {
@@ -279,4 +297,98 @@ async function carregarParceiro() {
         }
     } catch(e){}
 }
+
+// =====================================================
+// SEGURANÇA: Handler do formulário de perfil
+// Exige senha atual para qualquer alteração
+// =====================================================
+document.addEventListener('submit', async (e) => {
+    if (e.target.id !== 'profileForm') return;
+    e.preventDefault();
+    
+    const btn = document.getElementById('btnSalvarPerfil');
+    const nome = document.getElementById('profileName').value.trim();
+    const novaSenha = document.getElementById('newPassword').value;
+    const confirmarSenha = document.getElementById('confirmPassword').value;
+    const senhaAtual = document.getElementById('currentPassword').value;
+    
+    // Validações básicas
+    if (!nome) {
+        showToast('O nome não pode estar vazio', 'warning');
+        return;
+    }
+    
+    if (!senhaAtual) {
+        showToast('Informe sua senha atual para confirmar as alterações', 'warning');
+        document.getElementById('currentPassword').focus();
+        return;
+    }
+    
+    // Se preencheu nova senha, validar confirmação
+    if (novaSenha) {
+        if (novaSenha.length < 6) {
+            showToast('A nova senha deve ter pelo menos 6 caracteres', 'warning');
+            return;
+        }
+        if (novaSenha !== confirmarSenha) {
+            showToast('As senhas novas não coincidem', 'danger');
+            return;
+        }
+        if (novaSenha === senhaAtual) {
+            showToast('A nova senha deve ser diferente da atual', 'warning');
+            return;
+        }
+    }
+    
+    // Preparar dados para envio
+    const dados = {
+        name: nome,
+        current_password: senhaAtual
+    };
+    
+    // Só envia senha nova se foi preenchida
+    if (novaSenha) {
+        dados.password = novaSenha;
+    }
+    
+    // Desabilitar botão durante requisição
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Salvando...';
+    
+    try {
+        const r = await fetch(`${API_URL}/users/me`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(dados)
+        });
+        
+        const resposta = await r.json();
+        
+        if (r.ok) {
+            showToast('Dados salvos com sucesso!', 'success');
+            // Limpar campos de senha
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('currentPassword').value = '';
+            // Atualizar nome na interface (top bar e gaveta)
+            if (window.atualizarNomeUsuario) {
+                window.atualizarNomeUsuario(resposta.name);
+            }
+        } else {
+            showToast(resposta.detail || 'Erro ao salvar dados', 'danger');
+            if (resposta.detail && resposta.detail.includes('Senha atual incorreta')) {
+                document.getElementById('currentPassword').focus();
+                document.getElementById('currentPassword').select();
+            }
+        }
+    } catch (err) {
+        showToast('Erro de conexão ao salvar dados', 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i>Salvar dados da conta';
+    }
+});
 </script>
