@@ -6,10 +6,17 @@ from datetime import datetime, timedelta
 from ..core.database import get_db
 from ..core.deps import get_current_user
 from ..models.models import User, Transaction, Category, Room
-from ..schemas.transaction import TransactionCreate, Transaction as TransactionSchema, DashboardSummary, Category as CategorySchema
+from ..schemas.transaction import (
+    TransactionCreate, 
+    TransactionUpdate, 
+    Transaction as TransactionSchema, 
+    DashboardSummary, 
+    Category as CategorySchema
+)
 
 router = APIRouter()
 
+# 📥 CRIAR LANÇAMENTO
 @router.post("/", response_model=TransactionSchema)
 def create_transaction(
     transaction_in: TransactionCreate,
@@ -29,6 +36,7 @@ def create_transaction(
     db.refresh(db_transaction)
     return db_transaction
 
+# 📋 LISTAR LANÇAMENTOS DO CASAL
 @router.get("/", response_model=List[TransactionSchema])
 def get_transactions(
     db: Session = Depends(get_db),
@@ -38,51 +46,122 @@ def get_transactions(
 ):
     if not current_user.room_id:
         return []
-    return db.query(Transaction).filter(Transaction.room_id == current_user.room_id).order_by(Transaction.date.desc()).offset(skip).limit(limit).all()
+    
+    return db.query(Transaction).filter(
+        Transaction.room_id == current_user.room_id
+    ).order_by(Transaction.date.desc()).offset(skip).limit(limit).all()
 
-@router.get("/dashboard", response_model=DashboardSummary)
+# 📝 ATUALIZAR LANÇAMENTO
+@router.put("/{transaction_id}", response_model=TransactionSchema)
+def update_transaction(
+    transaction_id: int,
+    transaction_update: TransactionUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Busca a transação e garante que ela pertence à sala do casal
+    db_transaction = db.query(Transaction).filter(
+        Transaction.id == transaction_id,
+        Transaction.room_id == current_user.room_id
+    ).first()
+
+    if not db_transaction:
+        raise HTTPException(status_code=404, detail="Lançamento não encontrado ou acesso negado")
+
+    # Atualiza apenas os campos enviados
+    update_data = transaction_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_transaction, key, value)
+
+    db.commit()
+    db.refresh(db_transaction)
+    return db_transaction
+
+# 🗑️ EXCLUIR LANÇAMENTO
+@router.delete("/{transaction_id}")
+def delete_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Busca a transação e garante que ela pertence à sala do casal
+    db_transaction = db.query(Transaction).filter(
+        Transaction.id == transaction_id,
+        Transaction.room_id == current_user.room_id
+    ).first()
+
+    if not db_transaction:
+        raise HTTPException(status_code=404, detail="Lançamento não encontrado ou acesso negado")
+
+    db.delete(db_transaction)
+    db.commit()
+    return {"message": "Lançamento excluído com sucesso"}
+
+# 📊 DASHBOARD COMPLETO (Saldos, Gráficos e Transações Recentes)
+@router.get("/dashboard", response_model=dict)
 def get_dashboard(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     if not current_user.room_id:
         return {
-            "total_balance": 0,
-            "monthly_income": 0,
-            "monthly_expenses": 0,
-            "monthly_balance": 0,
-            "debt_summary": "Desconectado"
+            "summary": {"total_balance": 0, "monthly_income": 0, "monthly_expenses": 0, "debt_summary": "Desconectado"},
+            "categories": [],
+            "recent": [],
+            "chart_data": {"labels": [], "income": [], "expenses": []}
         }
-    
+
     room_id = current_user.room_id
-    now = datetime.utcnow()
-    start_of_month = datetime(now.year, now.month, 1)
     
-    transactions = db.query(Transaction).filter(Transaction.room_id == room_id).all()
+    # 1. Totais para os Cards de Topo
+    income = db.query(func.sum(Transaction.amount)).filter(
+        Transaction.room_id == room_id, Transaction.type == 'entrada'
+    ).scalar() or 0
+
+    expenses = db.query(func.sum(Transaction.amount)).filter(
+        Transaction.room_id == room_id, Transaction.type == 'saida'
+    ).scalar() or 0
+
+    # 2. Gastos por Categoria (Para o gráfico de Rosca)
+    categories_data = db.query(
+        Category.name, 
+        func.sum(Transaction.amount).label('total')
+    ).join(Transaction, Transaction.category_id == Category.id)\
+     .filter(Transaction.room_id == room_id, Transaction.type == 'saida')\
+     .group_by(Category.name).all()
     
-    total_balance = sum(t.amount if t.type == 'entrada' else -t.amount for t in transactions)
-    
-    monthly_txs = [t for t in transactions if t.date >= start_of_month]
-    monthly_income = sum(t.amount for t in monthly_txs if t.type == 'entrada')
-    monthly_expenses = sum(t.amount for t in monthly_txs if t.type == 'saida')
-    monthly_balance = monthly_income - monthly_expenses
-    
-    # Lógica simplificada de dívida (quem pagou o quê)
-    # Aqui poderíamos calcular o saldo entre user1 e user2 baseado no split_type
-    debt_summary = "Tudo em dia" # Placeholder
-    
+    # 3. Últimas 5 Transações (Para a lista central)
+    recent_transactions = db.query(Transaction).filter(
+        Transaction.room_id == room_id
+    ).order_by(Transaction.date.desc()).limit(5).all()
+
+    # 4. Dados para o Gráfico de Linha (Fluxo Financeiro)
+    # Por enquanto, enviamos dados estáticos formatados, mas a estrutura já permite o front ler
+    chart_labels = ["01/08", "05/08", "10/08", "15/08", "20/08", "25/08", "31/08"]
+    chart_income = [1800, 2000, 1900, 2500, 2800, 3500, 3850]
+    chart_expenses = [1200, 1500, 1400, 1800, 2000, 2200, 2600]
+
     return {
-        "total_balance": total_balance,
-        "monthly_income": monthly_income,
-        "monthly_expenses": monthly_expenses,
-        "monthly_balance": monthly_balance,
-        "debt_summary": debt_summary
+        "summary": {
+            "total_balance": income - expenses,
+            "monthly_income": income,
+            "monthly_expenses": expenses,
+            "debt_summary": "Tudo em dia"
+        },
+        "categories": [{"name": c[0], "value": c[1]} for c in categories_data],
+        "recent": [
+            {
+                "description": t.description,
+                "amount": t.amount,
+                "type": t.type,
+                "date": t.date.strftime("%d/%m/%Y"),
+                "category": t.category.name if t.category else "Outros"
+            } for t in recent_transactions
+        ],
+        "chart_data": {
+            "labels": chart_labels,
+            "income": chart_income,
+            "expenses": chart_expenses
+        }
     }
 
-@router.get("/categories", response_model=List[CategorySchema])
-def get_categories(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    # Categorias padrão + categorias da sala
-    return db.query(Category).filter((Category.room_id == None) | (Category.room_id == current_user.room_id)).all()

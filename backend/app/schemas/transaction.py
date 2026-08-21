@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class CategoryBase(BaseModel):
@@ -27,6 +27,17 @@ class TransactionBase(BaseModel):
 
 class TransactionCreate(TransactionBase):
     pass
+
+# ✅ ADICIONADO: Schema para atualização parcial
+class TransactionUpdate(BaseModel):
+    amount: Optional[float] = None
+    description: Optional[str] = None
+    category_id: Optional[int] = None
+    type: Optional[str] = None
+    date: Optional[datetime] = None
+    paid_by: Optional[str] = None
+    split_type: Optional[str] = None
+    custom_split_data: Optional[str] = None
 
 class Transaction(TransactionBase):
     id: int
