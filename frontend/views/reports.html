@@ -29,12 +29,15 @@ async function inicializarRelatorios() {
 async function carregarRelatorioDados() {
     const periodoElement = document.getElementById('relatorioPeriodo');
     if (!periodoElement) return;
+    const tokenDaView = window.__syncusViewToken;
     const [year, month] = periodoElement.value.split('-').map(Number);
     try {
         relatorioDados = await apiRequest(`/transactions/dashboard?year=${year}&month=${month}`);
         relatorioTransacoes = await apiRequest(`/transactions/?start_date=${encodeURIComponent(`${year}-${String(month).padStart(2, '0')}-01T00:00:00`)}&end_date=${encodeURIComponent(`${month === 12 ? year + 1 : year}-${String(month === 12 ? 1 : month + 1).padStart(2, '0')}-01T00:00:00`)}&limit=500`);
+        if (tokenDaView !== window.__syncusViewToken || !document.getElementById('relatorioPeriodo')) return;
         renderizarRelatorio();
     } catch (error) {
+        if (tokenDaView !== window.__syncusViewToken) return;
         showToast(handleApiError(error, 'Não foi possível carregar o relatório.'), 'danger');
     }
 }
