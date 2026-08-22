@@ -62,8 +62,10 @@ function marcarMenuAtivo(viewAtiva) {
 
 // Executa <script> que estiverem dentro da view
 function executarScriptsDentroDaView(container) {
+    document.querySelectorAll('script[data-syncus-view-script]').forEach(script => script.remove());
     container.querySelectorAll('script').forEach(antigo => {
         const novo = document.createElement('script');
+        novo.dataset.syncusViewScript = 'true';
         novo.textContent = antigo.textContent;
         document.body.appendChild(novo);
         antigo.remove();
