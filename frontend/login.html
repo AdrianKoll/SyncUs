@@ -94,7 +94,7 @@
     <script src="js/app.js"></script>
     <script>
         // Se já estiver logado, vai direto pro app
-        if (localStorage.getItem('token')) {
+        if (getStoredToken()) {
             window.location.href = 'index.html#/dashboard';
         }
 
@@ -134,8 +134,9 @@
                 const token = dados.access_token || dados.token;
                 if (!token) throw new Error('Backend não retornou token de acesso');
 
-                // Salva token e entra no app
-                localStorage.setItem('token', token);
+                // Salva token e entra no app conforme a escolha de sessão
+                const lembrar = e.target.querySelector('input[type="checkbox"]')?.checked ?? true;
+                storeAuthToken(token, lembrar);
                 showToast('✅ Login efetuado com sucesso!', 'success');
 
                 setTimeout(() => {
