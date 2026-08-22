@@ -5,6 +5,10 @@ from app.core.database import Base  # ✅ CORRIGIDO O CAMINHO DA IMPORTAÇÃO
 import datetime
 
 
+def utcnow_naive():
+    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -74,8 +78,8 @@ class CoupleInvite(Base):
     receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     token_used = Column(String, nullable=False)
     status = Column(String, default="pending")  # pending / accepted / rejected
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow_naive)
+    updated_at = Column(DateTime, default=utcnow_naive, onupdate=utcnow_naive)
 
     sender = relationship("User", foreign_keys=[sender_id])
     receiver = relationship("User", foreign_keys=[receiver_id])
@@ -89,7 +93,7 @@ class CoupleConnection(Base):
     user1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user2_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_active = Column(Boolean, default=True)
-    connected_at = Column(DateTime, default=datetime.datetime.utcnow)
+    connected_at = Column(DateTime, default=utcnow_naive)
     disconnected_at = Column(DateTime, nullable=True)
 
     user1 = relationship("User", foreign_keys=[user1_id])
@@ -107,6 +111,6 @@ class Notification(Base):
     type = Column(String, nullable=False)  # invite_income / invite_accepted / invite_rejected / disconnect
     related_id = Column(Integer, nullable=True)
     is_read = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow_naive)
 
     user = relationship("User")
