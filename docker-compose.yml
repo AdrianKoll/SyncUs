@@ -45,5 +45,16 @@ services:
     volumes:
       - ./backend:/app
 
+  frontend:
+    image: nginx:alpine
+    container_name: frontend-couple-finance
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+
 volumes:
   postgres_data:

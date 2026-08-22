@@ -1,78 +1,80 @@
 # SyncUs — Gestão Financeira para Casais
 
-O **SyncUs** é uma plataforma moderna de gestão financeira compartilhada, desenvolvida especificamente para casais que buscam transparência e organização em tempo real. O projeto utiliza uma arquitetura robusta de microsserviços e tecnologias de ponta no ecossistema Python para garantir segurança, escalabilidade e uma experiência de usuário fluida.
+O SyncUs é uma aplicação web de gestão financeira compartilhada para casais. O projeto possui um backend em FastAPI, persistência PostgreSQL, autenticação JWT, vínculo entre usuários, notificações e uma SPA leve em HTML, CSS e JavaScript.
 
-> **Nota de Desenvolvimento:** Este projeto está em fase de desenvolvimento ativo. O backend está funcional e testado, incluindo autenticação, sistema de vínculos e notificações em tempo real. A integração completa com o frontend e o dashboard de lançamentos são as próximas etapas do roadmap.
+## Stack
 
----
+| Camada | Tecnologia |
+|---|---|
+| API | FastAPI, Uvicorn e Python 3.11+ |
+| Banco | PostgreSQL 15 e SQLAlchemy |
+| Validação | Pydantic 2 e e-mail validado |
+| Segurança | OAuth2 password flow, JWT, Passlib e bcrypt |
+| Tempo real | WebSocket com fallback de polling de notificações |
+| Frontend | HTML, CSS, JavaScript, Bootstrap e Chart.js |
+| Infraestrutura | Docker Compose com PostgreSQL, pgAdmin, API e Nginx |
 
-##  Stack Tecnológica
+## Executar com Docker
 
-O projeto foi construído utilizando as melhores práticas de desenvolvimento backend, focando em performance e segurança.
+Crie o arquivo de ambiente a partir do modelo e preencha os valores reais:
 
-| Camada | Tecnologia | Descrição |
-| :--- | :--- | :--- |
-| **Backend** | **FastAPI (Python 3.12)** | Framework de alta performance com tipagem estática e validação automática. |
-| **Banco de Dados** | **PostgreSQL 15** | Banco de dados relacional robusto para persistência de dados complexos. |
-| **ORM / Validação** | **SQLAlchemy & Pydantic** | Gerenciamento de banco de dados e validação rigorosa de esquemas de dados. |
-| **Segurança** | **OAuth 2.0 + JWT** | Autenticação baseada em tokens com criptografia bcrypt para senhas. |
-| **Tempo Real** | **WebSockets** | Comunicação bidirecional para notificações instantâneas sem necessidade de refresh. |
-| **Infraestrutura** | **Docker & Docker Compose** | Containerização completa do ambiente para desenvolvimento e deploy consistente. |
+```bash
+cp .env.example .env
+docker compose up --build -d
+```
 
----
+Após a inicialização, os endereços locais são:
 
-## Funcionalidades Concluídas (Backend)
+| Serviço | URL |
+|---|---|
+| Frontend | http://localhost:8080 |
+| API | http://localhost:8000 |
+| Swagger | http://localhost:8000/docs |
+| ReDoc | http://localhost:8000/redoc |
+| pgAdmin | http://localhost:5050 |
 
-O núcleo do sistema já está operacional, com as seguintes funcionalidades implementadas e testadas:
+O frontend usa `http://localhost:8000/api` por padrão. Para outro ambiente, pode-se definir `window.SYNCUS_API_URL` antes dos scripts do frontend.
 
-- **Autenticação Segura:** Fluxo completo de cadastro e login utilizando tokens JWT e proteção contra ataques de força bruta.
-- **Gestão de Vínculos:** Sistema de convites via tokens únicos com validade de 7 dias, permitindo a conexão segura entre duas contas.
-- **Notificações em Tempo Real:** Implementação de WebSockets para alertar usuários sobre novos convites, aceites ou recusas instantaneamente.
-- **Segurança de Conta:** Proteção para alteração de dados sensíveis (e-mail e senha) exigindo a validação da senha atual.
-- **Arquitetura em Camadas:** Organização profissional do código seguindo os padrões de `api`, `services`, `models`, `repositories` e `schemas`.
+## Funcionalidades integradas
 
----
+A autenticação possui cadastro, login OAuth2, JWT, armazenamento de sessão conforme a opção “Manter conectado”, consulta de perfil e atualização protegida por senha atual. Novos usuários recebem automaticamente um token de vínculo com validade de sete dias.
 
-## Como Rodar o Projeto
+O vínculo possui envio, aceite, recusa, consulta de parceiro e desconexão. O aceite cria ou reutiliza a sala financeira compartilhada e garante as categorias padrão. As notificações podem ser listadas, marcadas como lidas, apagadas e respondidas diretamente pelo menu superior. O WebSocket permanece disponível e o frontend utiliza polling como fallback quando a conexão em memória não estiver disponível.
 
-Para executar o ambiente completo de desenvolvimento, siga os passos abaixo:
+O domínio financeiro possui:
 
-### Pré-requisitos
-- **Docker** e **Docker Compose** instalados.
-- **Git** para clonagem do repositório.
+| Recurso | Endpoint principal |
+|---|---|
+| Listar lançamentos | `GET /api/transactions/` |
+| Criar lançamento | `POST /api/transactions/` |
+| Atualizar lançamento | `PUT /api/transactions/{id}` |
+| Excluir lançamento | `DELETE /api/transactions/{id}` |
+| Excluir todos da sala | `DELETE /api/transactions/all` |
+| Listar categorias | `GET /api/transactions/categories` |
+| Criar categoria | `POST /api/transactions/categories` |
+| Excluir categoria | `DELETE /api/transactions/categories/{id}` |
+| Dashboard mensal | `GET /api/transactions/dashboard?year=YYYY&month=MM` |
 
-### Instalação e Execução
-1. **Clonar o Repositório:**
-   ```bash
-   git clone https://github.com/AdrianKoll/SyncUs.git
-   cd SyncUs
-   ```
+O dashboard mensal calcula saldo, entradas, saídas, gastos por categoria, lançamentos recentes, saldo entre parceiros e séries diárias reais. A tela de lançamentos consome o CRUD completo, a tela de histórico possui filtros e exportação CSV, e a tela de relatórios utiliza os dados reais para cards, gráficos e exportações CSV, TXT e JSON.
 
-2. **Configurar Ambiente:**
-   Copie o arquivo de exemplo e preencha suas chaves:
-   ```bash
-   cp .env.example .env
-   ```
+## Testes
 
-3. **Subir Containers:**
-   ```bash
-   docker-compose up --build -d
-   ```
+Os testes de integração ficam em `backend/tests` e cobrem registro, login, vínculo, categorias, criação, listagem, atualização, dashboard, filtros e exclusão de lançamentos.
 
-4. **Acessar a Documentação:**
-   A documentação interativa da API (Swagger UI) estará disponível em:
-   `http://localhost:8000/docs`
+```bash
+cd backend
+pytest -q
+```
 
----
+O teste usa SQLite temporário e não substitui a validação final com PostgreSQL em Docker. Para uma execução completa do ambiente:
 
-## Roadmap de Desenvolvimento
+```bash
+docker compose up --build -d
+curl http://localhost:8000/
+```
 
-- [ ] **Integração Frontend:** Conexão total das telas de Dashboard com as APIs de lançamentos.
-- [ ] **Gestão de Lançamentos:** CRUD completo de entradas e saídas com categorias customizadas.
-- [ ] **Relatórios Dinâmicos:** Geração de gráficos de desempenho financeiro mensal.
-- [ ] **Exportação de Dados:** Suporte para relatórios em formato PDF e CSV.
-- [ ] **CI/CD:** Implementação de testes automatizados com Pytest e pipeline de deploy.
+## Organização do código
 
----
+O backend está dividido em `api`, `core`, `models`, `repositories`, `schemas`, `services` e `websockets`. O frontend possui `app.js` para autenticação, API e utilitários; `router.js` para navegação hash-based; `ui.js` para perfil, notificações e dashboard; e views HTML carregadas dinamicamente.
 
-**Desenvolvido por [Adrian Kauã](https://www.linkedin.com/in/adrian-kaua)** — *Focado em construir soluções backend sólidas e escaláveis.*
+As alterações de manutenção foram implementadas de forma incremental na branch de trabalho, preservando os endpoints existentes e adicionando os novos recursos de forma complementar.
