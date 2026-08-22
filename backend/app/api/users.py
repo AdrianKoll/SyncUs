@@ -26,7 +26,12 @@ def update_user_me(
     
     if not verify_password(user_update.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Senha atual incorreta")
-    
+
+    if user_update.email and user_update.email != current_user.email:
+        existing = user_repository.get_user_by_email(db, email=user_update.email)
+        if existing and existing.id != current_user.id:
+            raise HTTPException(status_code=409, detail="E-mail já cadastrado")
+
     return user_repository.update_user(db, current_user, user_update)
 
 @router.post("/token/refresh", response_model=UserSchema)
