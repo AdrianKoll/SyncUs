@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.deps import get_db, get_current_user
 from app.models.models import User, CoupleInvite, CoupleConnection, Notification
-from pydantic import BaseModel
+from app.services.room_service import ensure_room_for_users
+from pydantic import BaseModel, ConfigDict
 
 # Schemas locais
 class InviteCreate(BaseModel):
@@ -29,8 +30,7 @@ class NotificationResponse(BaseModel):
     created_at: datetime
     related_id: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 router = APIRouter(prefix="/api/couple", tags=["Vínculo de Casal"])
 
@@ -43,7 +43,7 @@ def send_invite(
 ):
     # 1. Busca quem pertence o token
     target_user = db.query(User).filter(User.connection_token == invite_data.token).first()
-    if not target_user:
+    if not target_user or not target_user.token_expires_at or target_user.token_expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
         raise HTTPException(404, "Token inválido, expirado ou já utilizado")
     if target_user.id == current_user.id:
         raise HTTPException(400, "Não pode se conectar com você mesmo")
@@ -117,14 +117,22 @@ def accept_invite(
         raise HTTPException(404, "Convite não encontrado ou já respondido")
     
     invite.status = "accepted"
-    
+
+    sender = db.query(User).filter(User.id == invite.sender_id).first()
+    if not sender:
+        raise HTTPException(404, "Usuário que enviou o convite não foi encontrado")
+
+    try:
+        ensure_room_for_users(db, sender, current_user)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+
     connection = CoupleConnection(
         user1_id=invite.sender_id,
         user2_id=invite.receiver_id
     )
     db.add(connection)
-    
-    sender = db.query(User).get(invite.sender_id)
+
     sender.connection_token = None
     
     notif = db.query(Notification).filter_by(
@@ -220,10 +228,14 @@ def disconnect(
         raise HTTPException(400, "Nenhuma conexão ativa para desfazer")
     
     conn.is_active = False
-    conn.disconnected_at = datetime.utcnow()
+    conn.disconnected_at = datetime.now(timezone.utc).replace(tzinfo=None)
     
     other_id = conn.user2_id if conn.user1_id == current_user.id else conn.user1_id
-    
+
+    db.query(User).filter(User.id.in_([current_user.id, other_id])).update(
+        {User.room_id: None}, synchronize_session=False
+    )
+
     db.query(Notification).filter(
         Notification.user_id.in_([current_user.id, other_id]),
         Notification.type.in_(["invite_income", "invite_accepted"])
