@@ -1,4 +1,5 @@
 import calendar
+import json
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -83,6 +84,56 @@ def _period_bounds(year: Optional[int], month: Optional[int]):
     else:
         end = datetime(selected_year, selected_month + 1, 1)
     return selected_year, selected_month, start, end
+
+
+def _normalize_custom_split_data(amount: float, split_type: str, raw_data: Optional[str]):
+    if split_type != "custom":
+        return None
+    if not raw_data:
+        raise HTTPException(
+            status_code=400,
+            detail="Informe quanto cada pessoa pagou na divisão personalizada",
+        )
+    try:
+        data = json.loads(raw_data) if isinstance(raw_data, str) else raw_data
+        eu = float(data.get("eu", data.get("user1", data.get("current_user", 0))))
+        parceira = float(data.get("parceira", data.get("partner", data.get("user2", 0))))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        raise HTTPException(status_code=400, detail="Valores da divisão personalizada inválidos")
+
+    if eu < 0 or parceira < 0 or abs((eu + parceira) - float(amount)) > 0.01:
+        raise HTTPException(
+            status_code=400,
+            detail="A soma dos valores personalizados deve ser igual ao valor do lançamento",
+        )
+    return json.dumps({"eu": round(eu, 2), "parceira": round(parceira, 2)})
+
+
+def _payment_values(transaction: Transaction):
+    amount = float(transaction.amount)
+    if transaction.split_type == "custom" and transaction.custom_split_data:
+        try:
+            data = json.loads(transaction.custom_split_data)
+            return (
+                float(data.get("eu", data.get("user1", 0))),
+                float(data.get("parceira", data.get("user2", 0))),
+            )
+        except (TypeError, ValueError, json.JSONDecodeError):
+            pass
+    if transaction.paid_by in ("parceira", "partner", "user2"):
+        return 0.0, amount
+    if transaction.paid_by == "ambos":
+        return amount / 2, amount / 2
+    return amount, 0.0
+
+
+def _responsibility_values(transaction: Transaction):
+    amount = float(transaction.amount)
+    if transaction.split_type in ("100_user1", "100_eu"):
+        return amount, 0.0
+    if transaction.split_type in ("100_user2", "100_parceira"):
+        return 0.0, amount
+    return amount / 2, amount / 2
 
 
 def _serialize_transaction(transaction: Transaction):
@@ -179,6 +230,9 @@ def create_transaction(
 
     data = transaction_in.model_dump()
     data["category_id"] = category.id
+    data["custom_split_data"] = _normalize_custom_split_data(
+        data["amount"], data["split_type"], data.get("custom_split_data")
+    )
     db_transaction = Transaction(**data, room_id=room_id, user_id=current_user.id)
     db.add(db_transaction)
     db.commit()
@@ -239,6 +293,13 @@ def update_transaction(
         raise HTTPException(status_code=404, detail="Lançamento não encontrado ou acesso negado")
 
     update_data = transaction_update.model_dump(exclude_unset=True)
+    if "split_type" in update_data or "custom_split_data" in update_data or "amount" in update_data:
+        next_amount = update_data.get("amount", db_transaction.amount)
+        next_split_type = update_data.get("split_type", db_transaction.split_type)
+        next_custom_data = update_data.get("custom_split_data", db_transaction.custom_split_data)
+        update_data["custom_split_data"] = _normalize_custom_split_data(
+            next_amount, next_split_type, next_custom_data
+        )
     if "category_id" in update_data:
         category = _category_for_room(db, room_id, update_data["category_id"])
         update_data["category_id"] = category.id if category else None
@@ -336,13 +397,9 @@ def get_dashboard(
     for transaction in period_transactions:
         if transaction.type != "saida":
             continue
-        share = float(transaction.amount)
-        if transaction.split_type == "50/50":
-            share = share / 2
-        if transaction.paid_by in ("eu", "user1"):
-            couple_balance += share
-        elif transaction.paid_by in ("parceira", "partner", "user2"):
-            couple_balance -= share
+        paid_eu, _ = _payment_values(transaction)
+        responsibility_eu, _ = _responsibility_values(transaction)
+        couple_balance += paid_eu - responsibility_eu
 
     days_in_month = calendar.monthrange(selected_year, selected_month)[1]
     chart_income = [0.0] * days_in_month

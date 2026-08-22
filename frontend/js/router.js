@@ -32,6 +32,7 @@ window.navegar = function (view) {
 
 // Carrega o HTML da view e injeta no <main id="app">
 async function carregarView() {
+    fecharControlesAbertos();
     const hash = window.location.hash.replace('#/', '') || VIEW_PADRAO;
     const view = VIEWS_PERMITIDAS.includes(hash) ? hash : VIEW_PADRAO;
     const app = document.getElementById('app');
@@ -52,6 +53,22 @@ async function carregarView() {
             </div>
         `;
     }
+}
+
+function fecharControlesAbertos() {
+    const elementoAtivo = document.activeElement;
+    if (elementoAtivo && elementoAtivo !== document.body && typeof elementoAtivo.blur === 'function') {
+        elementoAtivo.blur();
+    }
+
+    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+        const toggle = menu.previousElementSibling;
+        if (toggle && window.bootstrap?.Dropdown) {
+            window.bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
+        } else {
+            menu.classList.remove('show');
+        }
+    });
 }
 
 function marcarMenuAtivo(viewAtiva) {

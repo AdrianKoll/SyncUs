@@ -147,6 +147,44 @@ function toApiDate(dateValue) {
     return dateValue.length === 10 ? `${dateValue}T12:00:00` : dateValue;
 }
 
+function obterRateioPersonalizado(transacao) {
+    if (!transacao || transacao.split_type !== 'custom' || !transacao.custom_split_data) return null;
+    try {
+        const data = typeof transacao.custom_split_data === 'string'
+            ? JSON.parse(transacao.custom_split_data)
+            : transacao.custom_split_data;
+        const eu = Number(data.eu ?? data.user1 ?? 0);
+        const parceira = Number(data.parceira ?? data.user2 ?? 0);
+        if (!Number.isFinite(eu) || !Number.isFinite(parceira)) return null;
+        return { eu, parceira };
+    } catch (error) {
+        return null;
+    }
+}
+
+function formatarPagador(transacao, html = false) {
+    const rateio = obterRateioPersonalizado(transacao);
+    if (rateio) {
+        if (html) return `<div>Rateio personalizado</div><small class="text-secondary">Você: ${formatCurrency(rateio.eu)} · Parceiro(a): ${formatCurrency(rateio.parceira)}</small>`;
+        return `Você: ${formatCurrency(rateio.eu)} | Parceiro(a): ${formatCurrency(rateio.parceira)}`;
+    }
+    const labels = { eu: 'Você', parceira: 'Parceiro(a)', ambos: 'Ambos', user1: 'Você', user2: 'Parceiro(a)' };
+    return escapeHtml(labels[transacao?.paid_by] || transacao?.paid_by || 'Ambos');
+}
+
+function transacaoPertenceAoPagador(transacao, pagador) {
+    if (pagador === 'ambos') return true;
+    const rateio = obterRateioPersonalizado(transacao);
+    if (rateio) return pagador === 'eu' ? rateio.eu > 0 : pagador === 'parceira' ? rateio.parceira > 0 : false;
+    return transacao?.paid_by === pagador;
+}
+
+function valorDaTransacaoParaPagador(transacao, pagador = 'ambos') {
+    const rateio = obterRateioPersonalizado(transacao);
+    if (rateio && pagador !== 'ambos') return rateio[pagador] || 0;
+    return Number(transacao?.amount || 0);
+}
+
 function iniciaisDoNome(nome) {
     if (!nome) return '??';
     return nome

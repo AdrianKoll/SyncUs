@@ -389,37 +389,39 @@ body {
    ✅ CORREÇÕES: INPUT DATE (remover ícone nativo) + SELECTS (padronizar)
    ===================================================== */
 
-/* ---------- 1. REMOVER ÍCONE NATIVO DO INPUT DE DATA (Chrome / Edge / Safari) ---------- */
+/* ---------- 1. INDICADOR NATIVO ESTÁVEL PARA CAMPOS DE DATA ---------- */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="month"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
-    opacity: 0;                  /* Esconde o ícone nativo */
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;             /* Mas mantém o clique funcionando */
+    opacity: .8;
+    cursor: pointer;
     margin: 0;
-    padding: 0;
 }
 
-/* ---------- 1.1. REMOVER ÍCONE NATIVO NO FIREFOX ---------- */
 input[type="date"]::-moz-calendar-picker-indicator,
 input[type="month"]::-moz-calendar-picker-indicator {
-    display: none !important;
+    opacity: .8;
+    cursor: pointer;
 }
 
-/* Deixa o input-group com ícone de data clicável certinho */
 .input-group:has(input[type="date"]),
 .input-group:has(input[type="month"]) {
     position: relative;
 }
-.input-group input[type="date"],
-.input-group input[type="month"] {
-    position: relative;
-    z-index: 2;
-    background: transparent;
+
+/* ---------- ÍCONES BOOTSTRAP ---------- */
+.bi {
+    line-height: 1;
+    vertical-align: -0.125em;
+}
+
+.bi-spin {
+    display: inline-block;
+    animation: syncus-spin .8s linear infinite;
+}
+
+@keyframes syncus-spin {
+    to { transform: rotate(360deg); }
 }
 
 /* ---------- 2. PADRONIZAR TODOS OS SELECTS (igual referência "Agosto de 2026") ---------- */

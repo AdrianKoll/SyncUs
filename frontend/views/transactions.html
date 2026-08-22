@@ -1,25 +1,26 @@
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
-    <div><h1 class="titulo-pagina mb-1"><i class="fa-solid fa-right-left text-primary me-2"></i>Lançamentos</h1><p class="subtitulo-pagina">Registre e gerencie entradas e saídas do casal em segundos</p></div>
+    <div><h1 class="titulo-pagina mb-1"><i class="bi bi-arrow-left-right text-primary me-2"></i>Lançamentos</h1><p class="subtitulo-pagina">Registre e gerencie entradas e saídas do casal em segundos</p></div>
 </div>
 
 <div class="card p-4 mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-4"><h5 class="fw-bold mb-0"><i class="fa-solid fa-circle-plus text-success me-2"></i><span id="tituloFormulario">Novo lançamento</span></h5><button type="button" id="cancelarEdicao" class="btn btn-outline-secondary btn-sm rounded-pill d-none">Cancelar edição</button></div>
+    <div class="d-flex justify-content-between align-items-center mb-4"><h5 class="fw-bold mb-0"><i class="bi bi-plus-circle text-success me-2"></i><span id="tituloFormulario">Novo lançamento</span></h5><button type="button" id="cancelarEdicao" class="btn btn-outline-secondary btn-sm rounded-pill d-none">Cancelar edição</button></div>
     <form id="formLancamento">
         <div class="row g-3">
             <div class="col-md-4"><label class="form-label small">Descrição</label><input id="descricaoLancamento" name="description" class="form-control" placeholder="Ex.: Supermercado, salário, aluguel" required maxlength="255"></div>
             <div class="col-md-2"><label class="form-label small">Valor (R$)</label><input id="valorLancamento" name="amount" type="number" step="0.01" min="0" class="form-control" placeholder="0,00" required></div>
             <div class="col-md-2"><label class="form-label small">Tipo</label><select id="tipoLancamento" name="type" class="form-select" required><option value="entrada">Entrada</option><option value="saida" selected>Saída</option></select></div>
             <div class="col-md-2"><label class="form-label small">Data</label><input id="dataLancamento" name="date" type="date" class="form-control" required></div>
-            <div class="col-md-2"><label class="form-label small">Pago por</label><select id="pagoPorLancamento" name="paid_by" class="form-select" required><option value="ambos">Ambos</option><option value="eu">Você</option><option value="parceira">Parceiro(a)</option></select></div>
-            <div class="col-md-4"><label class="form-label small">Categoria</label><div class="input-group"><select id="categoriaLancamento" name="category_id" class="form-select" required><option value="">Carregando categorias...</option></select><button type="button" class="btn btn-outline-primary" onclick="criarCategoriaLancamento()" title="Criar categoria"><i class="fa-solid fa-plus"></i></button></div></div>
-            <div class="col-md-4"><label class="form-label small">Divisão</label><select id="divisaoLancamento" name="split_type" class="form-select" required><option value="50/50">50/50</option><option value="100_user1">100% você</option><option value="100_user2">100% parceiro(a)</option><option value="custom">Personalizada</option></select></div>
-            <div class="col-md-4 d-flex align-items-end"><button type="submit" id="salvarLancamento" class="btn btn-primary w-100 py-2 fw-bold rounded-pill"><i class="fa-solid fa-floppy-disk me-2"></i>Salvar lançamento</button></div>
+            <div class="col-md-2"><label class="form-label small">Pagador principal</label><select id="pagoPorLancamento" name="paid_by" class="form-select" required><option value="eu" selected>Você</option><option value="parceira">Parceiro(a)</option><option value="ambos">Ambos</option></select></div>
+            <div class="col-md-4"><label class="form-label small">Categoria</label><div class="input-group"><select id="categoriaLancamento" name="category_id" class="form-select" required><option value="">Carregando categorias...</option></select><button type="button" class="btn btn-outline-primary" onclick="criarCategoriaLancamento()" title="Criar categoria"><i class="bi bi-plus"></i></button></div></div>
+            <div class="col-md-4"><label class="form-label small">Divisão do pagamento</label><select id="divisaoLancamento" name="split_type" class="form-select" required><option value="50/50" selected>50% para cada</option><option value="100_user1">100% você</option><option value="100_user2">100% parceiro(a)</option><option value="custom">Valores personalizados</option></select></div>
+            <div class="col-12" id="rateioPersonalizado" hidden><div class="border rounded-3 p-3"><div class="small fw-semibold mb-2"><i class="bi bi-calculator me-2 text-primary"></i>Quanto cada pessoa pagou?</div><div class="row g-2"><div class="col-md-4"><label class="form-label small">Você (R$)</label><input id="valorPagoEu" type="number" min="0" step="0.01" class="form-control" placeholder="700,00"></div><div class="col-md-4"><label class="form-label small">Parceiro(a) (R$)</label><input id="valorPagoParceira" type="number" min="0" step="0.01" class="form-control" placeholder="300,00"></div><div class="col-md-4 d-flex align-items-end"><small id="resumoRateio" class="text-secondary pb-2">A soma deve ser igual ao valor total.</small></div></div></div></div>
+            <div class="col-md-4 d-flex align-items-end"><button type="submit" id="salvarLancamento" class="btn btn-primary w-100 py-2 fw-bold rounded-pill"><i class="bi bi-floppy me-2"></i>Salvar lançamento</button></div>
         </div>
     </form>
 </div>
 
 <div class="card p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Lançamentos registrados</h5><div class="d-flex gap-2"><select id="filtroTipoLancamento" class="form-select form-select-sm"><option value="">Todos os tipos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select><button id="atualizarLancamentos" class="btn btn-outline-secondary btn-sm rounded-pill"><i class="fa-solid fa-rotate"></i></button></div></div>
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-primary me-2"></i>Lançamentos registrados</h5><div class="d-flex gap-2"><select id="filtroTipoLancamento" class="form-select form-select-sm"><option value="">Todos os tipos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select><button id="atualizarLancamentos" class="btn btn-outline-secondary btn-sm rounded-pill"><i class="bi bi-arrow-clockwise"></i></button></div></div>
     <div class="table-responsive"><table class="table table-dark table-borderless align-middle mb-0"><thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Pago por</th><th class="text-end">Valor</th><th class="text-end">Ações</th></tr></thead><tbody id="tabelaLancamentos"><tr><td colspan="6" class="text-center text-secondary py-5">Carregando lançamentos...</td></tr></tbody></table></div>
 </div>
 
@@ -34,10 +35,22 @@ async function inicializarTransactions() {
 
     if (!form.dataset.bound) {
         form.addEventListener('submit', salvarTransacao);
+        form.addEventListener('pointerdown', event => {
+            const elementoAtivo = document.activeElement;
+            const clicouEmData = event.target.closest?.('input[type="date"], input[type="month"]');
+            if (elementoAtivo?.matches?.('input[type="date"], input[type="month"]') && !clicouEmData) {
+                elementoAtivo.blur();
+            }
+        }, true);
         document.getElementById('cancelarEdicao')?.addEventListener('click', limparFormularioTransacao);
         document.getElementById('filtroTipoLancamento')?.addEventListener('change', renderizarTransacoes);
         document.getElementById('atualizarLancamentos')?.addEventListener('click', carregarTransacoes);
+        document.getElementById('divisaoLancamento')?.addEventListener('change', atualizarCamposRateio);
+        document.getElementById('valorLancamento')?.addEventListener('input', atualizarResumoRateio);
+        document.getElementById('valorPagoEu')?.addEventListener('input', atualizarResumoRateio);
+        document.getElementById('valorPagoParceira')?.addEventListener('input', atualizarResumoRateio);
         document.getElementById('dataLancamento').value = toInputDate();
+        atualizarCamposRateio();
         form.dataset.bound = 'true';
     }
 
@@ -78,11 +91,11 @@ function renderizarTransacoes() {
     tabela.innerHTML = transacoesLancamento.map(transaction => `
         <tr>
             <td class="text-secondary small">${formatDate(transaction.date)}</td>
-            <td><i class="fa-solid ${transaction.type === 'entrada' ? 'fa-arrow-down text-success' : 'fa-arrow-up text-danger'} me-2"></i>${escapeHtml(transaction.description)}</td>
+            <td><i class="bi ${transaction.type === 'entrada' ? 'bi-arrow-down text-success' : 'bi-arrow-up text-danger'} me-2"></i>${escapeHtml(transaction.description)}</td>
             <td>${escapeHtml(transaction.category?.name || 'Outros')}</td>
-            <td>${escapeHtml(transaction.paid_by || 'Ambos')}</td>
+            <td>${formatarPagador(transaction, true)}</td>
             <td class="text-end ${transaction.type === 'entrada' ? 'tag-positiva' : 'tag-negativa'}">${transaction.type === 'entrada' ? '+' : '-'} ${formatCurrency(transaction.amount)}</td>
-            <td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick="editarTransacao(${transaction.id})" title="Editar"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-danger" onclick="excluirTransacao(${transaction.id})" title="Excluir"><i class="fa-solid fa-trash"></i></button></td>
+            <td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick="editarTransacao(${transaction.id})" title="Editar"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" onclick="excluirTransacao(${transaction.id})" title="Excluir"><i class="bi bi-trash"></i></button></td>
         </tr>
     `).join('');
 }
@@ -97,8 +110,10 @@ async function salvarTransacao(event) {
         paid_by: document.getElementById('pagoPorLancamento').value,
         split_type: document.getElementById('divisaoLancamento').value,
         category_id: Number(document.getElementById('categoriaLancamento').value) || null,
-        custom_split_data: null
+        custom_split_data: obterRateioPersonalizado()
     };
+
+    if (payload.split_type === 'custom' && !payload.custom_split_data) return;
 
     const button = document.getElementById('salvarLancamento');
     button.disabled = true;
@@ -124,12 +139,14 @@ window.editarTransacao = function (id) {
     document.getElementById('valorLancamento').value = transaction.amount;
     document.getElementById('tipoLancamento').value = transaction.type;
     document.getElementById('dataLancamento').value = toInputDate(transaction.date);
-    document.getElementById('pagoPorLancamento').value = transaction.paid_by || 'ambos';
+    document.getElementById('pagoPorLancamento').value = transaction.paid_by || 'eu';
     document.getElementById('divisaoLancamento').value = transaction.split_type || '50/50';
+    preencherRateioPersonalizado(transaction.custom_split_data);
+    atualizarCamposRateio();
     document.getElementById('categoriaLancamento').value = transaction.category_id || '';
     document.getElementById('tituloFormulario').textContent = 'Editar lançamento';
     document.getElementById('cancelarEdicao').classList.remove('d-none');
-    document.getElementById('salvarLancamento').innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i>Atualizar lançamento';
+    document.getElementById('salvarLancamento').innerHTML = '<i class="bi bi-floppy me-2"></i>Atualizar lançamento';
     document.getElementById('formLancamento').scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
@@ -156,12 +173,68 @@ window.excluirTransacao = async function (id) {
     }
 };
 
+function obterRateioPersonalizado() {
+    if (document.getElementById('divisaoLancamento').value !== 'custom') return null;
+    const amount = Number(document.getElementById('valorLancamento').value);
+    const eu = Number(document.getElementById('valorPagoEu').value);
+    const parceira = Number(document.getElementById('valorPagoParceira').value);
+    if (!Number.isFinite(amount) || !Number.isFinite(eu) || !Number.isFinite(parceira) || eu < 0 || parceira < 0) {
+        showToast('Informe valores válidos para a divisão personalizada.', 'warning');
+        return null;
+    }
+    if (Math.abs((eu + parceira) - amount) > 0.01) {
+        showToast('A soma do que cada pessoa pagou deve ser igual ao valor total.', 'warning');
+        return null;
+    }
+    return JSON.stringify({ eu: Number(eu.toFixed(2)), parceira: Number(parceira.toFixed(2)) });
+}
+
+function preencherRateioPersonalizado(rawData) {
+    let data = {};
+    try {
+        data = rawData ? (typeof rawData === 'string' ? JSON.parse(rawData) : rawData) : {};
+    } catch (error) {
+        data = {};
+    }
+    document.getElementById('valorPagoEu').value = data.eu ?? data.user1 ?? '';
+    document.getElementById('valorPagoParceira').value = data.parceira ?? data.user2 ?? '';
+    atualizarResumoRateio();
+}
+
+function atualizarCamposRateio() {
+    const personalizado = document.getElementById('divisaoLancamento')?.value === 'custom';
+    const container = document.getElementById('rateioPersonalizado');
+    if (container) container.hidden = !personalizado;
+    if (personalizado && !document.getElementById('valorPagoEu').value && !document.getElementById('valorPagoParceira').value) {
+        const amount = Number(document.getElementById('valorLancamento').value) || 0;
+        document.getElementById('valorPagoEu').value = (amount / 2).toFixed(2);
+        document.getElementById('valorPagoParceira').value = (amount / 2).toFixed(2);
+    }
+    atualizarResumoRateio();
+}
+
+function atualizarResumoRateio() {
+    const resumo = document.getElementById('resumoRateio');
+    if (!resumo) return;
+    const amount = Number(document.getElementById('valorLancamento').value) || 0;
+    const eu = Number(document.getElementById('valorPagoEu').value) || 0;
+    const parceira = Number(document.getElementById('valorPagoParceira').value) || 0;
+    const diferenca = amount - eu - parceira;
+    resumo.textContent = `Total: ${formatCurrency(eu + parceira)} / ${formatCurrency(amount)}${Math.abs(diferenca) < 0.01 ? ' ✓' : ` · Falta ${formatCurrency(Math.abs(diferenca))}`}`;
+    resumo.classList.toggle('text-success', Math.abs(diferenca) < 0.01);
+    resumo.classList.toggle('text-danger', Math.abs(diferenca) >= 0.01);
+}
+
 function limparFormularioTransacao() {
     transacaoEmEdicao = null;
     document.getElementById('formLancamento')?.reset();
+    document.getElementById('pagoPorLancamento').value = 'eu';
+    document.getElementById('valorPagoEu').value = '';
+    document.getElementById('valorPagoParceira').value = '';
     document.getElementById('dataLancamento').value = toInputDate();
+    atualizarCamposRateio();
     document.getElementById('tituloFormulario').textContent = 'Novo lançamento';
     document.getElementById('cancelarEdicao').classList.add('d-none');
-    document.getElementById('salvarLancamento').innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i>Salvar lançamento';
+    document.getElementById('salvarLancamento').innerHTML = '<i class="bi bi-floppy me-2"></i>Salvar lançamento';
 }
 </script>

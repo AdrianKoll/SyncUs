@@ -112,3 +112,31 @@ def test_auth_link_and_financial_crud(client):
     )
     assert deleted.status_code == 200
     assert client.get("/api/transactions/", headers=alice_headers).json() == []
+
+    custom_payload = {
+        "amount": 1000,
+        "description": "Televisão",
+        "category_id": category_id,
+        "type": "saida",
+        "date": "2026-08-11T12:00:00",
+        "paid_by": "eu",
+        "split_type": "custom",
+        "custom_split_data": {"eu": 700, "parceira": 300},
+    }
+    custom = client.post(
+        "/api/transactions/", headers=alice_headers, json=custom_payload
+    )
+    assert custom.status_code == 200, custom.text
+    assert custom.json()["custom_split_data"] == '{"eu": 700.0, "parceira": 300.0}'
+
+    custom_dashboard = client.get(
+        "/api/transactions/dashboard?year=2026&month=8", headers=bob_headers
+    )
+    assert custom_dashboard.status_code == 200
+    assert custom_dashboard.json()["couple_balance"]["amount"] == 200
+
+    invalid_custom = client.post(
+        "/api/transactions/", headers=alice_headers,
+        json={**custom_payload, "description": "Rateio inválido", "custom_split_data": {"eu": 800, "parceira": 300}},
+    )
+    assert invalid_custom.status_code == 400

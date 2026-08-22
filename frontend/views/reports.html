@@ -1,12 +1,12 @@
-<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4"><div><h1 class="titulo-pagina mb-1"><i class="fa-solid fa-chart-line text-primary me-2"></i>Relatórios</h1><p class="subtitulo-pagina">Análises e relatórios exportáveis do financeiro do casal</p></div></div>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4"><div><h1 class="titulo-pagina mb-1"><i class="bi bi-graph-up text-primary me-2"></i>Relatórios</h1><p class="subtitulo-pagina">Análises e relatórios exportáveis do financeiro do casal</p></div></div>
 
-<div class="card p-4 mb-4"><div class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label small">Mês / Ano</label><input type="month" id="relatorioPeriodo" class="form-control"></div><div class="col-md-3"><label class="form-label small">Quem pagou</label><select id="filtroQuem" class="form-select"><option value="ambos">Todos</option><option value="eu">Você</option><option value="parceira">Parceiro(a)</option></select></div><div class="col-md-3"><label class="form-label small">Formato</label><select id="formatoRelatorio" class="form-select"><option value="csv">CSV</option><option value="txt">TXT</option><option value="json">JSON</option></select></div><div class="col-md-3"><button id="gerarRelatorioBtn" class="btn btn-primary w-100 py-2 fw-bold rounded-pill"><i class="fa-solid fa-file-arrow-down me-2"></i>Gerar relatório</button></div></div></div>
+<div class="card p-4 mb-4"><div class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label small">Mês / Ano</label><input type="month" id="relatorioPeriodo" class="form-control"></div><div class="col-md-3"><label class="form-label small">Quem pagou</label><select id="filtroQuem" class="form-select"><option value="ambos">Todos</option><option value="eu">Você</option><option value="parceira">Parceiro(a)</option></select></div><div class="col-md-3"><label class="form-label small">Formato</label><select id="formatoRelatorio" class="form-select"><option value="csv">CSV</option><option value="txt">TXT</option><option value="json">JSON</option></select></div><div class="col-md-3"><button id="gerarRelatorioBtn" class="btn btn-primary w-100 py-2 fw-bold rounded-pill"><i class="bi bi-file-earmark-arrow-down me-2"></i>Gerar relatório</button></div></div></div>
 
-<div class="row g-4 mb-4"><div class="col-md-3"><div class="card-resumo card-azul"><div class="icone"><i class="fa-solid fa-wallet"></i></div><div class="label">Saldo Final</div><div id="relatorioSaldo" class="valor">Carregando...</div></div></div><div class="col-md-3"><div class="card-resumo card-verde"><div class="icone"><i class="fa-solid fa-arrow-down"></i></div><div class="label">Total Entradas</div><div id="relatorioEntradas" class="valor text-success">Carregando...</div></div></div><div class="col-md-3"><div class="card-resumo card-vermelho"><div class="icone"><i class="fa-solid fa-arrow-up"></i></div><div class="label">Total Saídas</div><div id="relatorioSaidas" class="valor text-danger">Carregando...</div></div></div><div class="col-md-3"><div class="card-resumo card-roxo"><div class="icone"><i class="fa-solid fa-basket-shopping"></i></div><div class="label">Transações</div><div id="relatorioQuantidade" class="valor" style="color:#A78BFA">Carregando...</div></div></div></div>
+<div class="row g-4 mb-4"><div class="col-md-3"><div class="card-resumo card-azul"><div class="icone"><i class="bi bi-wallet2"></i></div><div class="label">Saldo Final</div><div id="relatorioSaldo" class="valor">Carregando...</div></div></div><div class="col-md-3"><div class="card-resumo card-verde"><div class="icone"><i class="bi bi-arrow-down"></i></div><div class="label">Total Entradas</div><div id="relatorioEntradas" class="valor text-success">Carregando...</div></div></div><div class="col-md-3"><div class="card-resumo card-vermelho"><div class="icone"><i class="bi bi-arrow-up"></i></div><div class="label">Total Saídas</div><div id="relatorioSaidas" class="valor text-danger">Carregando...</div></div></div><div class="col-md-3"><div class="card-resumo card-roxo"><div class="icone"><i class="bi bi-basket"></i></div><div class="label">Transações</div><div id="relatorioQuantidade" class="valor" style="color:#A78BFA">Carregando...</div></div></div></div>
 
-<div class="row g-4 mb-4"><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Gastos por categoria</h5><div style="height:260px"><canvas id="grafCatRel"></canvas></div></div></div><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-column text-primary me-2"></i>Evolução diária</h5><div style="height:260px"><canvas id="grafMesRel"></canvas></div></div></div></div>
+<div class="row g-4 mb-4"><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="bi bi-pie-chart text-primary me-2"></i>Gastos por categoria</h5><div style="height:260px"><canvas id="grafCatRel"></canvas></div></div></div><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="bi bi-bar-chart text-primary me-2"></i>Evolução diária</h5><div style="height:260px"><canvas id="grafMesRel"></canvas></div></div></div></div>
 
-<div class="row g-4"><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Distribuição por pagador</h5><div style="height:220px"><canvas id="grafQuemRel"></canvas></div></div></div><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="fa-solid fa-sparkles text-primary me-2"></i>Resumo do período</h5><ul id="resumoRelatorio" class="list-unstyled small lh-lg"><li class="text-secondary">Carregando dados...</li></ul></div></div></div>
+<div class="row g-4"><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="bi bi-scale text-primary me-2"></i>Distribuição por pagador</h5><div style="height:220px"><canvas id="grafQuemRel"></canvas></div></div></div><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="bi bi-stars text-primary me-2"></i>Resumo do período</h5><ul id="resumoRelatorio" class="list-unstyled small lh-lg"><li class="text-secondary">Carregando dados...</li></ul></div></div></div>
 
 <script>
 var relatorioDados = null;
@@ -46,11 +46,25 @@ function renderizarRelatorio() {
     document.getElementById('relatorioQuantidade').textContent = relatorioTransacoes.length;
 
     const quem = document.getElementById('filtroQuem').value;
-    const filtered = quem === 'ambos' ? relatorioTransacoes : relatorioTransacoes.filter(item => item.paid_by === quem);
+    const filtered = relatorioTransacoes.filter(item => transacaoPertenceAoPagador(item, quem));
     const gastos = filtered.filter(item => item.type === 'saida');
     const porCategoria = {};
     const porPagador = { eu: 0, parceira: 0, ambos: 0 };
-    gastos.forEach(item => { const name = item.category?.name || 'Outros'; porCategoria[name] = (porCategoria[name] || 0) + Number(item.amount || 0); porPagador[item.paid_by] = (porPagador[item.paid_by] || 0) + Number(item.amount || 0); });
+    gastos.forEach(item => {
+        const name = item.category?.name || 'Outros';
+        porCategoria[name] = (porCategoria[name] || 0) + valorDaTransacaoParaPagador(item, quem);
+        const rateio = obterRateioPersonalizado(item);
+        if (rateio) {
+            if (quem === 'ambos') {
+                porPagador.eu += rateio.eu;
+                porPagador.parceira += rateio.parceira;
+            } else {
+                porPagador[quem] += rateio[quem] || 0;
+            }
+        } else {
+            porPagador[item.paid_by] = (porPagador[item.paid_by] || 0) + Number(item.amount || 0);
+        }
+    });
 
     relatorioCharts.forEach(chart => chart.destroy());
     relatorioCharts = [];
@@ -63,7 +77,7 @@ function renderizarRelatorio() {
     }
 
     const maiorCategoria = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
-    document.getElementById('resumoRelatorio').innerHTML = `<li class="py-1 border-bottom"><i class="fa-solid fa-circle-check text-success me-2"></i>Saldo do período: <strong>${formatCurrency(summary.total_balance)}</strong></li><li class="py-1 border-bottom"><i class="fa-solid fa-arrow-up text-danger me-2"></i>Saídas registradas: <strong>${formatCurrency(summary.monthly_expenses)}</strong></li><li class="py-1 border-bottom"><i class="fa-solid fa-folder text-primary me-2"></i>Maior categoria: <strong>${maiorCategoria ? `${escapeHtml(maiorCategoria[0])} (${formatCurrency(maiorCategoria[1])})` : 'Nenhuma'}</strong></li><li class="py-1"><i class="fa-solid fa-list text-info me-2"></i>Total de registros: <strong>${filtered.length}</strong></li>`;
+    document.getElementById('resumoRelatorio').innerHTML = `<li class="py-1 border-bottom"><i class="bi bi-check-circle text-success me-2"></i>Saldo do período: <strong>${formatCurrency(summary.total_balance)}</strong></li><li class="py-1 border-bottom"><i class="bi bi-arrow-up text-danger me-2"></i>Saídas registradas: <strong>${formatCurrency(summary.monthly_expenses)}</strong></li><li class="py-1 border-bottom"><i class="bi bi-folder text-primary me-2"></i>Maior categoria: <strong>${maiorCategoria ? `${escapeHtml(maiorCategoria[0])} (${formatCurrency(maiorCategoria[1])})` : 'Nenhuma'}</strong></li><li class="py-1"><i class="bi bi-list-ul text-info me-2"></i>Total de registros: <strong>${filtered.length}</strong></li>`;
 }
 
 function gerarRelatorio() {
@@ -74,7 +88,7 @@ function gerarRelatorio() {
     const filenameBase = `syncus-relatorio-${document.getElementById('relatorioPeriodo').value}`;
     if (formato === 'json') downloadTextFile(`${filenameBase}.json`, JSON.stringify(payload, null, 2), 'application/json');
     else if (formato === 'txt') downloadTextFile(`${filenameBase}.txt`, `RELATÓRIO FINANCEIRO SYNCUS\nPeríodo: ${payload.periodo.month}/${payload.periodo.year}\nEntradas: ${formatCurrency(summary.monthly_income)}\nSaídas: ${formatCurrency(summary.monthly_expenses)}\nSaldo: ${formatCurrency(summary.total_balance)}\nTransações: ${relatorioTransacoes.length}\n`, 'text/plain;charset=utf-8');
-    else { const rows = [['Data', 'Descrição', 'Categoria', 'Tipo', 'Pago por', 'Valor'], ...relatorioTransacoes.map(item => [formatDate(item.date), item.description, item.category?.name || 'Outros', item.type, item.paid_by, item.amount])]; downloadTextFile(`${filenameBase}.csv`, '\ufeff' + rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(';')).join('\n'), 'text/csv;charset=utf-8'); }
+    else { const rows = [['Data', 'Descrição', 'Categoria', 'Tipo', 'Pago por', 'Valor'], ...relatorioTransacoes.map(item => [formatDate(item.date), item.description, item.category?.name || 'Outros', item.type, formatarPagador(item), item.amount])]; downloadTextFile(`${filenameBase}.csv`, '\ufeff' + rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(';')).join('\n'), 'text/csv;charset=utf-8'); }
     showToast(`Relatório ${formato.toUpperCase()} gerado.`, 'success');
 }
 </script>
