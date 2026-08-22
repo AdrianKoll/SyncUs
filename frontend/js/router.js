@@ -3,6 +3,8 @@
    ===================================================== */
 const VIEWS_PERMITIDAS = ['dashboard','transactions','history','reports','settings'];
 const VIEW_PADRAO = 'dashboard';
+let carregamentoViewAtual = 0;
+let controladorViewAtual = null;
 
 window.addEventListener('DOMContentLoaded', async () => {
     const user = await checkAuth();
@@ -32,20 +34,31 @@ window.navegar = function (view) {
 
 // Carrega o HTML da view e injeta no <main id="app">
 async function carregarView() {
+    window.__syncusViewToken = (window.__syncusViewToken || 0) + 1;
+    const idCarregamento = ++carregamentoViewAtual;
+    controladorViewAtual?.abort();
+    controladorViewAtual = new AbortController();
     fecharControlesAbertos();
     const hash = window.location.hash.replace('#/', '') || VIEW_PADRAO;
     const view = VIEWS_PERMITIDAS.includes(hash) ? hash : VIEW_PADRAO;
     const app = document.getElementById('app');
+    if (!app) return;
 
     try {
-        const res = await fetch(`views/${view}.html`);
+        const res = await fetch(`views/${view}.html?v=${Date.now()}`, {
+            cache: 'no-store',
+            signal: controladorViewAtual.signal,
+        });
         if (!res.ok) throw new Error('Página não encontrada');
+        const html = await res.text();
+        if (idCarregamento !== carregamentoViewAtual) return;
 
-        app.innerHTML = await res.text();
+        app.innerHTML = html;
         marcarMenuAtivo(view);
         executarScriptsDentroDaView(app);
 
     } catch (err) {
+        if (err.name === 'AbortError' || idCarregamento !== carregamentoViewAtual) return;
         app.innerHTML = `
             <div class="card p-5 text-center">
                 <h3 class="mb-2">😕 Ops!</h3>
