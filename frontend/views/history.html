@@ -1,179 +1,79 @@
-<h1 class="titulo-pagina mb-1">
-    <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Histórico
-</h1>
-<p class="subtitulo-pagina">Todas as transações do casal, com filtros e exportação</p>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4"><div><h1 class="titulo-pagina mb-1"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Histórico</h1><p class="subtitulo-pagina">Consulte todos os lançamentos registrados pelo casal</p></div><button id="exportarHistorico" class="btn btn-outline-success rounded-pill"><i class="fa-solid fa-file-csv me-2"></i>Exportar CSV</button></div>
 
+<div class="card p-4 mb-4"><div class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label small">Data inicial</label><input type="date" id="historicoInicio" class="form-control"></div><div class="col-md-3"><label class="form-label small">Data final</label><input type="date" id="historicoFim" class="form-control"></div><div class="col-md-2"><label class="form-label small">Tipo</label><select id="historicoTipo" class="form-select"><option value="">Todos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select></div><div class="col-md-2"><label class="form-label small">Categoria</label><select id="historicoCategoria" class="form-select"><option value="">Todas</option></select></div><div class="col-md-2"><button id="aplicarHistorico" class="btn btn-primary w-100 rounded-pill"><i class="fa-solid fa-filter me-2"></i>Filtrar</button></div></div></div>
 
-<!-- FILTROS -->
-<div class="card p-4 mb-4">
-    <div class="row g-3 align-items-end">
-        <!-- DATA INÍCIO -->
-        <div class="col-md-3">
-            <label class="form-label small"><i class="fa-regular fa-calendar-check me-1 text-secondary"></i>Data início</label>
-            <div class="input-group">
-                <span class="input-group-text bg-transparent border-end-0"><i class="fa-regular fa-calendar text-secondary"></i></span>
-                <input type="date" class="form-control border-start-0">
-            </div>
-        </div>
+<div class="card p-4"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-bold mb-0">Lançamentos encontrados</h5><span id="historicoContador" class="text-secondary small"></span></div><div class="table-responsive"><table class="table table-dark table-borderless align-middle"><thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Pago por</th><th class="text-end">Valor</th></tr></thead><tbody id="tabelaHistorico"><tr><td colspan="6" class="text-center text-secondary py-5">Carregando histórico...</td></tr></tbody></table></div></div>
 
-        <!-- DATA FIM -->
-        <div class="col-md-3">
-            <label class="form-label small"><i class="fa-regular fa-calendar-xmark me-1 text-secondary"></i>Data fim</label>
-            <div class="input-group">
-                <span class="input-group-text bg-transparent border-end-0"><i class="fa-regular fa-calendar text-secondary"></i></span>
-                <input type="date" class="form-control border-start-0">
-            </div>
-        </div>
-
-        <!-- TIPO (ícone troca automaticamente) -->
-        <div class="col-md-2">
-            <label class="form-label small"><i class="fa-solid fa-filter me-1 text-secondary"></i>Tipo</label>
-            <div class="input-group">
-                <span class="input-group-text" id="iconeFiltroTipo">
-                    <i class="bi bi-arrow-left-right" style="color: #8A93B2;"></i>
-                </span>
-                <select class="form-select" id="filtroTipo">
-                    <option value="todos" selected>Todos</option>
-                    <option value="entrada">Apenas entradas</option>
-                    <option value="saida">Apenas saídas</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- CATEGORIA (ícone troca automaticamente) -->
-        <div class="col-md-2">
-            <label class="form-label small"><i class="fa-solid fa-folder me-1 text-secondary"></i>Categoria</label>
-            <div class="input-group">
-                <span class="input-group-text" id="iconeFiltroCategoria">
-                    <i class="bi bi-folder-fill" style="color: #8A93B2;"></i>
-                </span>
-                <select class="form-select" id="filtroCategoria">
-                    <option value="todas" selected>Todas</option>
-                    <option value="moradia">Moradia</option>
-                    <option value="alimentacao">Alimentação</option>
-                    <option value="transporte">Transporte</option>
-                    <option value="lazer">Lazer</option>
-                    <option value="receita">Receita</option>
-                    <option value="outros">Outros</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- BOTÕES AÇÃO -->
-        <div class="col-md-2 d-flex gap-2">
-            <button class="btn btn-primary flex-fill rounded-pill">
-                <i class="fa-solid fa-magnifying-glass me-1"></i>Filtrar
-            </button>
-            <button class="btn btn-success rounded-pill" title="Exportar CSV" onclick="exportarHistoricoCSV()">
-                <i class="fa-solid fa-file-csv"></i>
-            </button>
-        </div>
-    </div>
-</div>
-
-
-<!-- TABELA -->
-<div class="card p-0 overflow-hidden">
-    <table class="table table-dark mb-0">
-        <thead>
-            <tr>
-                <th><i class="fa-regular fa-calendar me-1"></i>Data</th>
-                <th><i class="fa-solid fa-tag me-1"></i>Descrição</th>
-                <th><i class="fa-solid fa-folder-tree me-1"></i>Categoria</th>
-                <th><i class="fa-solid fa-arrow-right-arrow-left me-1"></i>Tipo</th>
-                <th><i class="fa-solid fa-people-group me-1"></i>Pago por</th>
-                <th class="text-end"><i class="fa-solid fa-coins me-1"></i>Valor</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="text-secondary small">05/08/2026</td>
-                <td>Salário Adrian</td>
-                <td><i class="bi bi-cash-stack text-success me-1"></i>Receita</td>
-                <td><span class="badge bg-success">Entrada</span></td>
-                <td><i class="bi bi-person-fill text-success me-1"></i>Você</td>
-                <td class="text-end tag-positiva">+ R$ 2.300,00</td>
-            </tr>
-            <tr>
-                <td class="text-secondary small">06/08/2026</td>
-                <td>Supermercado</td>
-                <td><i class="bi bi-egg-fried text-warning me-1"></i>Alimentação</td>
-                <td><span class="badge bg-danger">Saída</span></td>
-                <td><i class="bi bi-people-fill text-primary me-1"></i>Ambos</td>
-                <td class="text-end tag-negativa">− R$ 350,00</td>
-            </tr>
-            <tr>
-                <td colspan="6" class="text-center text-secondary py-5">
-                    <i class="fa-regular fa-folder-open display-6 d-block mb-2 opacity-25"></i>
-                    Nenhum registro encontrado no período
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-
-
-<!-- ==============================================
-     JAVASCRIPT — TROCA AUTOMÁTICA DE ÍCONES + EXPORTAÇÃO
-     ============================================== -->
 <script>
-document.addEventListener('viewCarregada', () => {
+var historicoTransacoes = [];
+var historicoCategorias = [];
 
-    // ==========================
-    // TROCA ÍCONE DO FILTRO "TIPO"
-    // ==========================
-    const filtroTipo = document.getElementById('filtroTipo');
-    const iconeFiltroTipo = document.getElementById('iconeFiltroTipo');
+async function inicializarHistorico() {
+    const inicio = document.getElementById('historicoInicio');
+    const fim = document.getElementById('historicoFim');
+    if (!inicio || !fim) return;
 
-    function trocarIconeFiltroTipo(valor) {
-        switch(valor) {
-            case 'todos':
-                iconeFiltroTipo.innerHTML = '<i class="bi bi-arrow-left-right" style="color: #8A93B2;"></i>';
-                break;
-            case 'entrada':
-                iconeFiltroTipo.innerHTML = '<i class="bi bi-arrow-down-circle" style="color: #10B981;"></i>';
-                break;
-            case 'saida':
-                iconeFiltroTipo.innerHTML = '<i class="bi bi-arrow-up-circle" style="color: #EF4444;"></i>';
-                break;
-        }
+    if (!inicio.dataset.bound) {
+        const now = new Date();
+        inicio.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        fim.value = toInputDate(now);
+        document.getElementById('aplicarHistorico').addEventListener('click', carregarHistorico);
+        document.getElementById('exportarHistorico').addEventListener('click', exportarHistorico);
+        inicio.dataset.bound = 'true';
     }
-    filtroTipo.addEventListener('change', e => trocarIconeFiltroTipo(e.target.value));
 
+    await carregarCategoriasHistorico();
+    await carregarHistorico();
+}
 
-    // ==========================
-    // TROCA ÍCONE DO FILTRO "CATEGORIA"
-    // ==========================
-    const filtroCategoria = document.getElementById('filtroCategoria');
-    const iconeFiltroCategoria = document.getElementById('iconeFiltroCategoria');
-
-    function trocarIconeFiltroCategoria(valor) {
-        const icones = {
-            todas:      { icone: 'bi bi-folder-fill',          cor: '#8A93B2' },
-            moradia:    { icone: 'bi bi-house-fill',           cor: '#3B82F6' },
-            alimentacao:{ icone: 'bi bi-egg-fried',            cor: '#F59E0B' },
-            transporte: { icone: 'bi bi-car-front-fill',       cor: '#6B7280' },
-            lazer:      { icone: 'bi bi-music-note-beamed',    cor: '#8B5CF6' },
-            receita:    { icone: 'bi bi-cash-stack',           cor: '#10B981' },
-            outros:     { icone: 'bi bi-box-seam-fill',        cor: '#94A3B8' }
-        };
-        const escolhido = icones[valor];
-        iconeFiltroCategoria.innerHTML = `<i class="${escolhido.icone}" style="color: ${escolhido.cor};"></i>`;
+async function carregarCategoriasHistorico() {
+    try {
+        historicoCategorias = await apiRequest('/transactions/categories');
+        const select = document.getElementById('historicoCategoria');
+        if (select) select.innerHTML = '<option value="">Todas</option>' + historicoCategorias.map(category => `<option value="${category.id}">${escapeHtml(category.name)}</option>`).join('');
+    } catch (error) {
+        console.warn('Categorias do histórico indisponíveis:', error);
     }
-    filtroCategoria.addEventListener('change', e => trocarIconeFiltroCategoria(e.target.value));
+}
 
+async function carregarHistorico() {
+    const params = new URLSearchParams({ limit: '500' });
+    const inicio = document.getElementById('historicoInicio').value;
+    const fim = document.getElementById('historicoFim').value;
+    const tipo = document.getElementById('historicoTipo').value;
+    const categoria = document.getElementById('historicoCategoria').value;
+    if (inicio) params.set('start_date', toApiDate(inicio));
+    if (fim) {
+        const nextDay = new Date(`${fim}T00:00:00`);
+        nextDay.setDate(nextDay.getDate() + 1);
+        params.set('end_date', toApiDate(toInputDate(nextDay)));
+    }
+    if (tipo) params.set('type', tipo);
+    if (categoria) params.set('category_id', categoria);
 
-    // ==========================
-    // EXPORTAÇÃO CSV
-    // ==========================
-    window.exportarHistoricoCSV = function() {
-        const csv = 'Data,Descricao,Categoria,Tipo,PagoPor,Valor\n05/08/2026,Salario Adrian,Receita,Entrada,Voce,2300.00\n06/08/2026,Supermercado,Alimentacao,Saida,Ambos,-350.00';
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `historico_syncus_${new Date().toISOString().slice(0,10)}.csv`;
-        a.click();
-        showToast('✅ Histórico exportado com sucesso!', 'success');
-    };
-});
+    try {
+        historicoTransacoes = await apiRequest(`/transactions/?${params.toString()}`);
+        renderizarHistorico();
+    } catch (error) {
+        historicoTransacoes = [];
+        document.getElementById('tabelaHistorico').innerHTML = `<tr><td colspan="6" class="text-center text-danger py-5">${escapeHtml(handleApiError(error, 'Erro ao carregar histórico.'))}</td></tr>`;
+    }
+}
+
+function renderizarHistorico() {
+    const tabela = document.getElementById('tabelaHistorico');
+    document.getElementById('historicoContador').textContent = `${historicoTransacoes.length} lançamento(s)`;
+    if (!historicoTransacoes.length) {
+        tabela.innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-5">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>';
+        return;
+    }
+    tabela.innerHTML = historicoTransacoes.map(transaction => `<tr><td class="text-secondary small">${formatDate(transaction.date)}</td><td>${escapeHtml(transaction.description)}</td><td>${escapeHtml(transaction.category?.name || 'Outros')}</td><td><span class="badge ${transaction.type === 'entrada' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">${transaction.type === 'entrada' ? 'Entrada' : 'Saída'}</span></td><td>${escapeHtml(transaction.paid_by || 'Ambos')}</td><td class="text-end ${transaction.type === 'entrada' ? 'tag-positiva' : 'tag-negativa'}">${transaction.type === 'entrada' ? '+' : '-'} ${formatCurrency(transaction.amount)}</td></tr>`).join('');
+}
+
+function exportarHistorico() {
+    if (!historicoTransacoes.length) return showToast('Não há dados para exportar.', 'warning');
+    const rows = [['Data', 'Descrição', 'Categoria', 'Tipo', 'Pago por', 'Valor'], ...historicoTransacoes.map(transaction => [formatDate(transaction.date), transaction.description, transaction.category?.name || 'Outros', transaction.type, transaction.paid_by || 'Ambos', transaction.amount])];
+    const csv = rows.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(';')).join('\n');
+    downloadTextFile(`syncus-historico-${toInputDate()}.csv`, '\ufeff' + csv, 'text/csv;charset=utf-8');
+}
 </script>
