@@ -1,225 +1,194 @@
-// --- UI E EVENTOS ---
+/* =====================================================
+   UI GLOBAL - perfil, notificações, WebSocket e dashboard
+   ===================================================== */
 
-// Variáveis globais para controlar as instâncias dos gráficos e evitar erro de Canvas
 let instanciaChartRosca = null;
 let instanciaChartLinha = null;
+let socket = null;
+let socketUserId = null;
+
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🖥️ UI carregada');
-    
-    // Inicializar componentes
     setupSidebar();
     setupNotifications();
-    
-    // Carregar dados iniciais
     carregarPerfilUsuario();
     carregarNotificacoes();
+    if (!window.__syncusNotificationsInterval) {
+        window.__syncusNotificationsInterval = setInterval(carregarNotificacoes, 30000);
+    }
 });
 
-// Sidebar e Navegação
+
 function setupSidebar() {
-    const btnToggle = document.getElementById('btnToggleSidebar');
-    const sidebar = document.querySelector('.sidebar');
-    const main = document.querySelector('.main-content');
+    const btnToggle = document.getElementById('btnMenu');
+    const sidebar = document.getElementById('sidebar');
 
     if (btnToggle && sidebar) {
         btnToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-            if (main) main.classList.toggle('active');
+            sidebar.classList.toggle('aberta');
         });
     }
 
-    // Links do menu
-    const links = document.querySelectorAll('.nav-link');
-    links.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const view = link.getAttribute('data-view');
-            if (view) {
-                // Remove active de todos
-                links.forEach(l => l.classList.remove('active'));
-                // Adiciona no clicado
-                link.classList.add('active');
-                
-                // Navega usando o router.js
-                if (typeof navegar === 'function') {
-                    navegar(view);
-                }
-            }
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            document.querySelectorAll('.nav-link').forEach(item => item.classList.remove('active'));
+            link.classList.add('active');
+            sidebar?.classList.remove('aberta');
         });
     });
 }
 
-// Notificações
+
 function setupNotifications() {
-    const btn = document.getElementById('btnNotificacoes');
-    if (btn) {
-        btn.addEventListener('click', () => {
-            const modalElement = document.getElementById('modalNotificacoes');
-            if (modalElement) {
-                const modal = new bootstrap.Modal(modalElement);
-                modal.show();
-                carregarNotificacoes();
-            }
-        });
-    }
+    const button = document.getElementById('btnSininho');
+    button?.addEventListener('click', carregarNotificacoes);
+
+    document.getElementById('marcarTodasLidas')?.addEventListener('click', async event => {
+        event.preventDefault();
+        try {
+            await apiRequest('/couple/notifications/read-all', { method: 'PUT' });
+            await carregarNotificacoes();
+        } catch (error) {
+            showToast(handleApiError(error, 'Não foi possível atualizar as notificações.'), 'danger');
+        }
+    });
 }
 
-// Perfil do Usuário
+
 async function carregarPerfilUsuario() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!localStorage.getItem('token')) return;
 
     try {
-        const res = await fetch(`${API_URL}/users/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const dados = await res.json();
-        if (!res.ok) throw new Error(dados.detail || 'Erro ao carregar perfil');
-
+        const dados = await apiRequest('/users/me');
         localStorage.setItem('user', JSON.stringify(dados));
-        
-        // Inicia a conexão em tempo real após obter o ID do usuário
         conectarWebSocket(dados.id);
 
-        // Atualiza na tela
-        const elNome = document.getElementById('userNome');
-        const elEmail = document.getElementById('userEmail');
-        const elIniciais = document.getElementById('userIniciais');
-
-        if (elNome) elNome.textContent = dados.name;
-        if (elEmail) elEmail.textContent = dados.email;
-        if (elIniciais) elIniciais.textContent = iniciaisDoNome(dados.name);
-
-    } catch (err) {
-        console.error('💥 Erro ao carregar perfil:', err);
-        if (err.message.includes('401') || err.message.includes('token')) {
-            logout();
-        }
+        document.querySelectorAll('#userNome, #perfilNome, #gavetaNome').forEach(element => {
+            element.textContent = dados.name;
+        });
+        document.querySelectorAll('#userEmail, #gavetaEmail').forEach(element => {
+            element.textContent = dados.email;
+        });
+        document.querySelectorAll('#userIniciais, #perfilFoto').forEach(element => {
+            element.textContent = iniciaisDoNome(dados.name);
+        });
+    } catch (error) {
+        if (isAuthError(error)) logout();
+        else console.error('Erro ao carregar perfil:', error);
     }
 }
 
-// Notificações
+
 async function carregarNotificacoes() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!localStorage.getItem('token')) return;
 
     try {
-        // A rota no backend está em /api/couple/notifications
-        const res = await fetch(`${API_URL}/couple/notifications`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const notificacoes = await res.json();
-        if (!res.ok) throw new Error('Falha ao carregar notificações');
-
+        const notificacoes = await apiRequest('/couple/notifications');
+        const naoLidas = notificacoes.filter(item => !item.is_read).length;
         const badge = document.getElementById('badgeNotificacoes');
         if (badge) {
-            const naoLidas = notificacoes.filter(n => !n.is_read).length;
             badge.textContent = naoLidas;
             badge.style.display = naoLidas > 0 ? 'block' : 'none';
         }
 
         const lista = document.getElementById('listaNotificacoes');
-        if (lista) {
-            if (notificacoes.length === 0) {
-                lista.innerHTML = '<div class="text-center py-4 text-secondary">Nenhuma notificação</div>';
-                return;
-            }
-
-            lista.innerHTML = notificacoes.map(n => `
-                <div class="notification-item ${n.is_read ? '' : 'unread'} p-3 border-bottom">
-                    <div class="d-flex justify-content-between align-items-start">
+        if (!lista) return;
+        const cabecalho = lista.querySelector(':scope > li:first-child');
+        const conteudo = notificacoes.length
+            ? notificacoes.map(notification => `
+                <li class="notification-item ${notification.is_read ? '' : 'unread'} p-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
                         <div>
-                            <div class="fw-bold small">${n.title}</div>
-                            <div class="text-secondary smaller">${n.message}</div>
+                            <div class="fw-bold small">${escapeHtml(notification.title)}</div>
+                            <div class="text-secondary smaller">${escapeHtml(notification.message)}</div>
+                            ${notification.type === 'invite_income' && !notification.is_read ? `
+                                <div class="mt-2 d-flex gap-2">
+                                    <button class="btn btn-sm btn-success" onclick="responderConvite(${notification.related_id}, 'accept')">Aceitar</button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="responderConvite(${notification.related_id}, 'reject')">Recusar</button>
+                                </div>
+                            ` : ''}
                         </div>
-                        <div class="smaller text-muted">${formatDate(n.created_at)}</div>
+                        <div class="smaller text-muted">${formatDate(notification.created_at)}</div>
                     </div>
-                </div>
-            `).join('');
-        }
-    } catch (err) {
-        console.error('💥 Erro ao carregar notificações:', err);
+                </li>
+            `).join('')
+            : '<li class="p-4 text-center text-secondary small">Nenhuma notificação</li>';
+
+        lista.innerHTML = '';
+        if (cabecalho) lista.appendChild(cabecalho);
+        lista.insertAdjacentHTML('beforeend', conteudo);
+    } catch (error) {
+        if (isAuthError(error)) logout();
+        else console.error('Erro ao carregar notificações:', error);
     }
 }
 
-// --- LÓGICA DE TEMPO REAL (WEBSOCKET) ---
-let socket = null;
+
+window.responderConvite = async function (inviteId, action) {
+    try {
+        const response = await apiRequest(`/couple/invite/${inviteId}/${action}`, { method: 'POST' });
+        showToast(response.mensagem || 'Convite atualizado.', 'success');
+        await carregarNotificacoes();
+        await carregarPerfilUsuario();
+        if (typeof carregarParceiro === 'function') await carregarParceiro();
+        if (typeof inicializarDashboard === 'function') await inicializarDashboard();
+    } catch (error) {
+        showToast(handleApiError(error, 'Não foi possível responder ao convite.'), 'danger');
+    }
+};
+
 
 function conectarWebSocket(userId) {
-    if (socket) return;
+    if (!userId || (socket && socketUserId === userId)) return;
+    if (socket) socket.close();
 
-    // Remove o '/api' da URL base para o WebSocket conectar na rota correta
-    const urlBase = API_URL.replace('/api', '');
-    const wsBase = urlBase.replace('http', 'ws' );
-    const wsUrl = `${wsBase}/ws/${userId}`;
-    
-    console.log('🔌 Tentando conectar ao WebSocket:', wsUrl);
-    
+    socketUserId = userId;
+    const urlBase = API_URL.replace(/\/api\/?$/, '');
+    const wsBase = urlBase.replace(/^http/, 'ws');
+    const wsUrl = `${wsBase}/ws/${encodeURIComponent(userId)}`;
+
     try {
         socket = new WebSocket(wsUrl);
-
-        socket.onopen = () => console.log('✅ WebSocket Conectado!');
-
-        socket.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('📩 Mensagem recebida via WS:', data);
-                carregarNotificacoes();
-                if (typeof showToast === 'function') showToast('Nova atualização!', 'info');
-            } catch (e) {
-                console.error('❌ Erro ao processar mensagem do WS:', e);
+        socket.onopen = () => console.log('WebSocket conectado.');
+        socket.onmessage = () => carregarNotificacoes();
+        socket.onclose = () => {
+            socket = null;
+            if (localStorage.getItem('token')) {
+                setTimeout(() => conectarWebSocket(userId), 5000);
             }
         };
-
-        socket.onclose = () => {
-            console.log('❌ Conexão WebSocket perdida. Tentando reconectar em 5s...');
-            socket = null;
-            setTimeout(() => conectarWebSocket(userId), 5000);
-        };
-
-        socket.onerror = (err) => console.error('💥 Erro no WebSocket:', err);
-    } catch (err) {
-        console.error('💥 Falha ao iniciar WebSocket:', err);
+        socket.onerror = error => console.warn('WebSocket indisponível:', error);
+    } catch (error) {
+        console.warn('Falha ao iniciar WebSocket:', error);
     }
 }
 
-// =====================================================
-// ✅ INTEGRAÇÃO FINANCEIRA - Dashboard e Lançamentos
-// =====================================================
 
 document.addEventListener('viewCarregada', () => {
     const hash = window.location.hash.replace('#/', '') || 'dashboard';
-    
-    if (hash === 'dashboard') {
-        inicializarDashboard();
-    } else if (hash === 'transactions') {
-        // inicializarTransactions(); // Implementar futuramente
-    }
+    if (hash === 'dashboard') inicializarDashboard();
+    if (hash === 'transactions' && typeof inicializarTransactions === 'function') inicializarTransactions();
+    if (hash === 'history' && typeof inicializarHistorico === 'function') inicializarHistorico();
+    if (hash === 'reports' && typeof inicializarRelatorios === 'function') inicializarRelatorios();
 });
 
-async function inicializarDashboard() {
-    console.log('📊 Sincronizando Dashboard...');
-    const token = localStorage.getItem('token');
-    
-    try {
-        const res = await fetch(`${API_URL}/transactions/dashboard`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (!res.ok) {
-            const erro = await res.json();
-            throw new Error(erro.detail || 'Erro na API');
-        }
-        
-        const dados = await res.json();
 
-        // 1. Cards de Resumo
+async function inicializarDashboard() {
+    const selectMonth = document.getElementById('dashboardMonth');
+    const now = new Date();
+    if (selectMonth && !selectMonth.dataset.bound) {
+        selectMonth.value = String(now.getMonth() + 1);
+        selectMonth.addEventListener('change', inicializarDashboard);
+        selectMonth.dataset.bound = 'true';
+    }
+    const month = Number(selectMonth?.value || now.getMonth() + 1);
+    const year = now.getFullYear();
+
+    try {
+        const dados = await apiRequest(`/transactions/dashboard?year=${year}&month=${month}`);
         const preencherCard = (seletor, valor) => {
-            const el = document.querySelector(seletor);
-            if (el) el.textContent = valor;
+            const element = document.querySelector(seletor);
+            if (element) element.textContent = valor;
         };
 
         preencherCard('.card-azul .valor', formatCurrency(dados.summary.total_balance));
@@ -227,80 +196,112 @@ async function inicializarDashboard() {
         preencherCard('.card-vermelho .valor', formatCurrency(dados.summary.monthly_expenses));
         preencherCard('.card-roxo .valor', dados.summary.debt_summary);
 
-        // 2. Lista de Transações Recentes
-        const containerRecentes = document.querySelector('.ultimas-transacoes-lista');
-        if (containerRecentes && dados.recent) {
-            if (dados.recent.length === 0) {
-                containerRecentes.innerHTML = '<div class="text-center p-3 text-muted">Nenhum lançamento este mês.</div>';
-            } else {
-                containerRecentes.innerHTML = dados.recent.map(t => `
-                    <div class="transacao-item d-flex align-items-center justify-content-between p-2 mb-2 border-bottom">
-                        <div class="d-flex align-items-center">
-                            <div class="icone-cat me-3 ${t.type === 'entrada' ? 'text-success' : 'text-danger'}">
-                                <i class="fa-solid ${t.type === 'entrada' ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold small">${t.description}</div>
-                                <div class="text-muted smaller">${t.category} | ${t.date}</div>
-                            </div>
-                        </div>
-                        <div class="fw-bold small ${t.type === 'entrada' ? 'text-success' : 'text-danger'}">
-                            ${t.type === 'entrada' ? '+' : '-'} ${formatCurrency(t.amount)}
-                        </div>
-                    </div>
-                `).join('');
+        const subtitle = document.querySelector('.subtitulo-pagina strong');
+        if (subtitle && dados.period) {
+            subtitle.textContent = `${String(dados.period.month).padStart(2, '0')}/${dados.period.year}`;
+        }
+
+        const tabelaRecentes = document.querySelector('.ultimas-transacoes-lista');
+        if (tabelaRecentes) {
+            tabelaRecentes.innerHTML = dados.recent?.length
+                ? dados.recent.map(transaction => `
+                    <tr>
+                        <td><div class="icone ${transaction.type === 'entrada' ? 'text-success' : 'text-danger'} rounded-2" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06)"><i class="fa-solid ${transaction.type === 'entrada' ? 'fa-arrow-down' : 'fa-arrow-up'}"></i></div></td>
+                        <td><div class="fw-semibold">${escapeHtml(transaction.description)}</div><div class="text-secondary small">${escapeHtml(transaction.category)}</div></td>
+                        <td class="text-secondary small">${escapeHtml(transaction.date)}</td>
+                        <td class="text-end ${transaction.type === 'entrada' ? 'tag-positiva' : 'tag-negativa'}">${transaction.type === 'entrada' ? '+' : '-'} ${formatCurrency(transaction.amount)}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="4" class="text-center text-secondary py-4">Nenhum lançamento no período.</td></tr>';
+        }
+
+        const coupleBalance = dados.couple_balance || { amount: 0, direction: 'settled' };
+        const balanceMessage = document.getElementById('saldoEntreMensagem');
+        const balanceValue = document.getElementById('saldoEntreValor');
+        if (balanceMessage && balanceValue) {
+            if (coupleBalance.direction === 'partner_owes_current') balanceMessage.textContent = 'Seu parceiro deve a você';
+            else if (coupleBalance.direction === 'current_owes_partner') balanceMessage.textContent = 'Você deve ao seu parceiro';
+            else balanceMessage.textContent = 'Nenhuma diferença pendente';
+            balanceValue.textContent = formatCurrency(coupleBalance.amount);
+        }
+
+        const categoriesList = document.getElementById('categoriasDashboard');
+        if (categoriesList) {
+            const totalCategories = dados.categories.reduce((sum, category) => sum + Number(category.value || 0), 0);
+            categoriesList.innerHTML = dados.categories.length
+                ? dados.categories.map((category, index) => {
+                    const percentage = totalCategories ? Math.round((category.value / totalCategories) * 100) : 0;
+                    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#6B7280', '#EC4899'];
+                    return `<li class="d-flex justify-content-between py-1"><span><span class="d-inline-block rounded-circle me-2" style="width:10px;height:10px;background:${colors[index % colors.length]}"></span>${escapeHtml(category.name)}</span><strong>${formatCurrency(category.value)} <span class="text-secondary">${percentage}%</span></strong></li>`;
+                }).join('')
+                : '<li class="text-secondary">Nenhuma saída registrada no período.</li>';
+        }
+
+        try {
+            const partner = await apiRequest('/couple/partner');
+            if (partner?.parceiro) {
+                const avatar = document.getElementById('saldoAvatarParceiro');
+                if (avatar) avatar.textContent = iniciaisDoNome(partner.parceiro.nome);
             }
+        } catch (error) {
+            console.warn('Vínculo não disponível no dashboard:', error);
         }
 
-        // 3. Gráficos
-        if (typeof Chart !== 'undefined') {
-            renderizarGraficosDashboard(dados);
-        }
-
-    } catch (err) {
-        console.error('💥 Erro ao sincronizar Dashboard:', err);
-        showToast('Erro de sincronização: ' + err.message, 'danger');
+        if (typeof Chart !== 'undefined') renderizarGraficosDashboard(dados);
+    } catch (error) {
+        if (isAuthError(error)) logout();
+        else showToast(handleApiError(error, 'Erro ao sincronizar o dashboard.'), 'danger');
     }
 }
 
+
 function renderizarGraficosDashboard(dados) {
-    // --- Gráfico de Rosca ---
     const ctxRosca = document.getElementById('graficoCategorias')?.getContext('2d');
-    if (ctxRosca && dados.categories.length > 0) {
-        if (instanciaChartRosca) instanciaChartRosca.destroy();
-        
-        instanciaChartRosca = new Chart(ctxRosca, {
-            type: 'doughnut',
-            data: {
-                labels: dados.categories.map(c => c.name),
-                datasets: [{
-                    data: dados.categories.map(c => c.value),
-                    backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#A78BFA']
-                }]
-            },
-            options: { cutout: '70%', plugins: { legend: { display: false } } }
-        });
+    if (ctxRosca) {
+        instanciaChartRosca?.destroy();
+        instanciaChartRosca = null;
+        if (dados.categories?.length) {
+            instanciaChartRosca = new Chart(ctxRosca, {
+                type: 'doughnut',
+                data: {
+                    labels: dados.categories.map(category => category.name),
+                    datasets: [{
+                        data: dados.categories.map(category => category.value),
+                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#A78BFA', '#6B7280']
+                    }]
+                },
+                options: { cutout: '70%', plugins: { legend: { display: false } } }
+            });
+        }
     }
 
-    // --- Gráfico de Linha ---
     const ctxLinha = document.getElementById('graficoFluxo')?.getContext('2d');
     if (ctxLinha) {
-        if (instanciaChartLinha) instanciaChartLinha.destroy();
-
+        instanciaChartLinha?.destroy();
         instanciaChartLinha = new Chart(ctxLinha, {
             type: 'line',
             data: {
-                labels: dados.chart_data.labels,
+                labels: dados.chart_data?.labels || [],
                 datasets: [
-                    { label: 'Entradas', data: dados.chart_data.income, borderColor: '#10B981', tension: 0.4 },
-                    { label: 'Saídas', data: dados.chart_data.expenses, borderColor: '#EF4444', tension: 0.4 }
+                    { label: 'Entradas', data: dados.chart_data?.income || [], borderColor: '#10B981', tension: 0.4 },
+                    { label: 'Saídas', data: dados.chart_data?.expenses || [], borderColor: '#EF4444', tension: 0.4 }
                 ]
             },
-            options: { 
-                responsive: true, 
+            options: {
+                responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } } 
+                plugins: { legend: { display: false } }
             }
         });
     }
 }
+
+
+window.atualizarNomeUsuario = function (nome) {
+    document.querySelectorAll('#perfilNome, #gavetaNome, #userNome').forEach(element => {
+        element.textContent = nome;
+    });
+    document.querySelectorAll('#perfilFoto, #userIniciais').forEach(element => {
+        element.textContent = iniciaisDoNome(nome);
+    });
+};
