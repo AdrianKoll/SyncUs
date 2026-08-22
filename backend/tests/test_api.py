@@ -140,3 +140,8 @@ def test_auth_link_and_financial_crud(client):
         json={**custom_payload, "description": "Rateio inválido", "custom_split_data": {"eu": 800, "parceira": 300}},
     )
     assert invalid_custom.status_code == 400
+
+    delete_all = client.delete("/api/transactions/all", headers=bob_headers)
+    assert delete_all.status_code == 200, delete_all.text
+    assert delete_all.json()["deleted"] == 1
+    assert client.get("/api/transactions/", headers=alice_headers).json() == []
