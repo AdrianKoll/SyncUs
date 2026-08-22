@@ -270,13 +270,23 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
+    min-height: 88px;
     padding: 16px 18px;
     border-radius: 14px;
     color: #fff;
+    font: inherit;
     text-decoration: none;
     margin-bottom: 12px;
     transition: .2s;
     border: 1px solid transparent;
+}
+.acao-rapida:disabled {
+    opacity: .72;
+    cursor: wait;
+}
+.acao-rapida > .d-flex {
+    min-width: 0;
 }
 .acao-rapida:hover { transform: translateX(4px); filter: brightness(1.08); color: #fff; }
 .acao-rapida:last-child { margin-bottom: 0; }

@@ -206,7 +206,7 @@
     </h5>
     <div class="row g-3">
         <div class="col-md-4">
-            <a class="acao-rapida acao-azul d-block text-decoration-none" href="#/transactions" onclick="navegar('transactions')">
+            <a class="acao-rapida acao-azul d-flex h-100 mb-0 text-decoration-none" href="#/transactions" onclick="navegar('transactions')">
                 <div class="d-flex align-items-center gap-3">
                     <div class="icone-acao"><i class="bi bi-folder-plus"></i></div>
                     <div>
@@ -218,7 +218,7 @@
             </a>
         </div>
         <div class="col-md-4">
-            <a class="acao-rapida acao-verde d-block text-decoration-none" href="#/reports" onclick="navegar('reports')">
+            <a class="acao-rapida acao-verde d-flex h-100 mb-0 text-decoration-none" href="#/reports" onclick="navegar('reports')">
                 <div class="d-flex align-items-center gap-3">
                     <div class="icone-acao"><i class="bi bi-file-earmark-arrow-down"></i></div>
                     <div>
@@ -230,9 +230,9 @@
             </a>
         </div>
         <div class="col-md-4">
-            <button class="acao-rapida acao-vermelha w-100 border-0 text-start" onclick="excluirTodosDados()">
+            <button type="button" id="btnExcluirTodosDados" class="acao-rapida acao-vermelha d-flex h-100 w-100 mb-0 border-0 text-start">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="icone-acao"><i class="bi bi-trash-can"></i></div>
+                    <div class="icone-acao"><i class="bi bi-trash3-fill"></i></div>
                     <div>
                         <div class="fw-bold">Excluir Todos os Dados</div>
                         <div class="small opacity-75">Ação irreversível</div>
@@ -251,16 +251,22 @@
 if (!window.__syncusSettingsViewBound) {
 window.__syncusSettingsViewBound = true;
 document.addEventListener('viewCarregada', async () => {
+    if (window.location.hash.replace('#/', '') !== 'settings') return;
+    const tokenDaView = window.__syncusViewToken;
     const user = await checkAuth();
-    if (!user) return;
+    if (!user || tokenDaView !== window.__syncusViewToken) return;
 
-    // Preenche dados do usuário
-    document.getElementById('myToken').value = user.connection_token || 'Nenhum token gerado';
-    document.getElementById('profileName').value = user.name;
-    document.getElementById('profileEmail').value = user.email;
+    // Preenche dados do usuário somente se Configurações ainda estiver ativa.
+    const tokenElement = document.getElementById('myToken');
+    const nameElement = document.getElementById('profileName');
+    const emailElement = document.getElementById('profileEmail');
+    if (!tokenElement || !nameElement || !emailElement) return;
+    tokenElement.value = user.connection_token || 'Nenhum token gerado';
+    nameElement.value = user.name;
+    emailElement.value = user.email;
 
     // Carrega dados do parceiro se conectado
-    await carregarParceiro();
+    await carregarParceiro(tokenDaView);
 });
 }
 
@@ -331,24 +337,31 @@ window.desvincularParceiro = async () => {
 
 window.excluirTodosDados = async () => {
     if (!confirm('CERTEZA MESMA? Todos os lançamentos financeiros da sala serão apagados permanentemente!')) return;
+    const button = document.getElementById('btnExcluirTodosDados');
+    if (button) button.disabled = true;
     try {
         const response = await apiRequest('/transactions/all', { method: 'DELETE' });
         showToast(`${response.deleted || 0} lançamento(s) excluído(s).`, 'warning');
         setTimeout(() => location.reload(), 900);
     } catch (error) {
         showToast(handleApiError(error, 'Não foi possível excluir os lançamentos.'), 'danger');
+        if (button) button.disabled = false;
     }
 };
 
-async function carregarParceiro() {
+document.getElementById('btnExcluirTodosDados')?.addEventListener('click', window.excluirTodosDados);
+
+async function carregarParceiro(tokenDaView = window.__syncusViewToken) {
     try {
         const dados = await apiRequest('/couple/partner');
+        if (tokenDaView !== window.__syncusViewToken) return;
         const r = { ok: true };
         
         const titulo = document.getElementById('tituloParceiro');
         const conectadoDiv = document.getElementById('parceiroConectado');
         const semConexaoDiv = document.getElementById('semConexao');
         const cardParceiro = document.getElementById('cardParceiro');
+        if (![titulo, conectadoDiv, semConexaoDiv, cardParceiro].every(Boolean)) return;
         
         if (r.ok) {
             // Backend retorna: { conectado: true/false, parceiro: {...} }
@@ -376,11 +389,17 @@ async function carregarParceiro() {
         semConexaoDiv.classList.remove('d-none');
         
     } catch(e) {
-        // Em caso de erro, também mostra estado sem conexão
-        document.getElementById('tituloParceiro').innerHTML = '<i class="bi bi-link-45deg-slash me-2 text-secondary"></i>Status da conexão';
-        document.getElementById('cardParceiro').classList.remove('border-start', 'border-5', 'border-success');
-        document.getElementById('parceiroConectado').classList.add('d-none');
-        document.getElementById('semConexao').classList.remove('d-none');
+        if (tokenDaView !== window.__syncusViewToken) return;
+        // Em caso de erro, também mostra estado sem conexão.
+        const titulo = document.getElementById('tituloParceiro');
+        const cardParceiro = document.getElementById('cardParceiro');
+        const conectadoDiv = document.getElementById('parceiroConectado');
+        const semConexaoDiv = document.getElementById('semConexao');
+        if (![titulo, cardParceiro, conectadoDiv, semConexaoDiv].every(Boolean)) return;
+        titulo.innerHTML = '<i class="bi bi-link-45deg-slash me-2 text-secondary"></i>Status da conexão';
+        cardParceiro.classList.remove('border-start', 'border-5', 'border-success');
+        conectadoDiv.classList.add('d-none');
+        semConexaoDiv.classList.remove('d-none');
     }
 }
 
