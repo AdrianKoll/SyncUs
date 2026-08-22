@@ -316,6 +316,21 @@ body {
 }
 .table-dark tbody tr:hover { background: var(--bg-card-hover); }
 
+.btn-acao-tabela {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    border-radius: 9px;
+}
+
+.btn-acao-tabela .bi {
+    font-size: .95rem;
+}
+
 .tag-positiva { color: var(--verde); font-weight: 700; }
 .tag-negativa { color: var(--vermelho); font-weight: 700; }
 

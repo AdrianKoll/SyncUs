@@ -95,7 +95,7 @@ function renderizarTransacoes() {
             <td>${escapeHtml(transaction.category?.name || 'Outros')}</td>
             <td>${formatarPagador(transaction, true)}</td>
             <td class="text-end ${transaction.type === 'entrada' ? 'tag-positiva' : 'tag-negativa'}">${transaction.type === 'entrada' ? '+' : '-'} ${formatCurrency(transaction.amount)}</td>
-            <td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick="editarTransacao(${transaction.id})" title="Editar"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" onclick="excluirTransacao(${transaction.id})" title="Excluir"><i class="bi bi-trash"></i></button></td>
+            <td class="text-end"><div class="d-inline-flex align-items-center gap-1"><button type="button" class="btn btn-sm btn-outline-primary btn-acao-tabela" onclick="editarTransacao(${transaction.id})" title="Editar" aria-label="Editar lançamento"><i class="bi bi-pencil"></i></button><button type="button" class="btn btn-sm btn-outline-danger btn-acao-tabela" onclick="excluirTransacao(${transaction.id})" title="Excluir" aria-label="Excluir lançamento"><i class="bi bi-trash"></i></button></div></td>
         </tr>
     `).join('');
 }
