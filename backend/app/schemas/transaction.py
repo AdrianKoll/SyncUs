@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -27,7 +27,7 @@ class TransactionBase(BaseModel):
     date: datetime
     paid_by: str
     split_type: str
-    custom_split_data: Optional[str] = None
+    custom_split_data: Optional[Union[str, dict[str, Any]]] = None
 
 
 class TransactionCreate(TransactionBase):
@@ -42,7 +42,7 @@ class TransactionUpdate(BaseModel):
     date: Optional[datetime] = None
     paid_by: Optional[str] = None
     split_type: Optional[str] = None
-    custom_split_data: Optional[str] = None
+    custom_split_data: Optional[Union[str, dict[str, Any]]] = None
 
 
 class Transaction(TransactionBase):

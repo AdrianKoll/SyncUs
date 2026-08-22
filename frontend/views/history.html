@@ -12,23 +12,26 @@ async function inicializarHistorico() {
     const inicio = document.getElementById('historicoInicio');
     const fim = document.getElementById('historicoFim');
     if (!inicio || !fim) return;
+    const tokenDaView = window.__syncusViewToken;
 
     if (!inicio.dataset.bound) {
         const now = new Date();
         inicio.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
         fim.value = toInputDate(now);
-        document.getElementById('aplicarHistorico').addEventListener('click', carregarHistorico);
-        document.getElementById('exportarHistorico').addEventListener('click', exportarHistorico);
+        document.getElementById('aplicarHistorico')?.addEventListener('click', () => carregarHistorico(tokenDaView));
+        document.getElementById('exportarHistorico')?.addEventListener('click', exportarHistorico);
         inicio.dataset.bound = 'true';
     }
 
-    await carregarCategoriasHistorico();
-    await carregarHistorico();
+    await carregarCategoriasHistorico(tokenDaView);
+    if (tokenDaView !== window.__syncusViewToken) return;
+    await carregarHistorico(tokenDaView);
 }
 
-async function carregarCategoriasHistorico() {
+async function carregarCategoriasHistorico(tokenDaView = window.__syncusViewToken) {
     try {
         historicoCategorias = await apiRequest('/transactions/categories');
+        if (tokenDaView !== window.__syncusViewToken) return;
         const select = document.getElementById('historicoCategoria');
         if (select) select.innerHTML = '<option value="">Todas</option>' + historicoCategorias.map(category => `<option value="${category.id}">${escapeHtml(category.name)}</option>`).join('');
     } catch (error) {
@@ -36,12 +39,17 @@ async function carregarCategoriasHistorico() {
     }
 }
 
-async function carregarHistorico() {
+async function carregarHistorico(tokenDaView = window.__syncusViewToken) {
+    const inicioElement = document.getElementById('historicoInicio');
+    const fimElement = document.getElementById('historicoFim');
+    const tipoElement = document.getElementById('historicoTipo');
+    const categoriaElement = document.getElementById('historicoCategoria');
+    if (![inicioElement, fimElement, tipoElement, categoriaElement].every(Boolean)) return;
     const params = new URLSearchParams({ limit: '500' });
-    const inicio = document.getElementById('historicoInicio').value;
-    const fim = document.getElementById('historicoFim').value;
-    const tipo = document.getElementById('historicoTipo').value;
-    const categoria = document.getElementById('historicoCategoria').value;
+    const inicio = inicioElement.value;
+    const fim = fimElement.value;
+    const tipo = tipoElement.value;
+    const categoria = categoriaElement.value;
     if (inicio) params.set('start_date', toApiDate(inicio));
     if (fim) {
         const nextDay = new Date(`${fim}T00:00:00`);
@@ -53,16 +61,21 @@ async function carregarHistorico() {
 
     try {
         historicoTransacoes = await apiRequest(`/transactions/?${params.toString()}`);
+        if (tokenDaView !== window.__syncusViewToken || !document.getElementById('tabelaHistorico')) return;
         renderizarHistorico();
     } catch (error) {
+        if (tokenDaView !== window.__syncusViewToken) return;
         historicoTransacoes = [];
-        document.getElementById('tabelaHistorico').innerHTML = `<tr><td colspan="6" class="text-center text-danger py-5">${escapeHtml(handleApiError(error, 'Erro ao carregar histórico.'))}</td></tr>`;
+        const tabela = document.getElementById('tabelaHistorico');
+        if (tabela) tabela.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-5">${escapeHtml(handleApiError(error, 'Erro ao carregar histórico.'))}</td></tr>`;
     }
 }
 
 function renderizarHistorico() {
     const tabela = document.getElementById('tabelaHistorico');
-    document.getElementById('historicoContador').textContent = `${historicoTransacoes.length} lançamento(s)`;
+    const contador = document.getElementById('historicoContador');
+    if (!tabela || !contador) return;
+    contador.textContent = `${historicoTransacoes.length} lançamento(s)`;
     if (!historicoTransacoes.length) {
         tabela.innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-5">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>';
         return;

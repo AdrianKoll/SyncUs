@@ -147,7 +147,7 @@ function toApiDate(dateValue) {
     return dateValue.length === 10 ? `${dateValue}T12:00:00` : dateValue;
 }
 
-function obterRateioPersonalizado(transacao) {
+function interpretarRateioTransacao(transacao) {
     if (!transacao || transacao.split_type !== 'custom' || !transacao.custom_split_data) return null;
     try {
         const data = typeof transacao.custom_split_data === 'string'
@@ -163,7 +163,7 @@ function obterRateioPersonalizado(transacao) {
 }
 
 function formatarPagador(transacao, html = false) {
-    const rateio = obterRateioPersonalizado(transacao);
+    const rateio = interpretarRateioTransacao(transacao);
     if (rateio) {
         if (html) return `<div>Rateio personalizado</div><small class="text-secondary">Você: ${formatCurrency(rateio.eu)} · Parceiro(a): ${formatCurrency(rateio.parceira)}</small>`;
         return `Você: ${formatCurrency(rateio.eu)} | Parceiro(a): ${formatCurrency(rateio.parceira)}`;
@@ -174,13 +174,13 @@ function formatarPagador(transacao, html = false) {
 
 function transacaoPertenceAoPagador(transacao, pagador) {
     if (pagador === 'ambos') return true;
-    const rateio = obterRateioPersonalizado(transacao);
+    const rateio = interpretarRateioTransacao(transacao);
     if (rateio) return pagador === 'eu' ? rateio.eu > 0 : pagador === 'parceira' ? rateio.parceira > 0 : false;
     return transacao?.paid_by === pagador;
 }
 
 function valorDaTransacaoParaPagador(transacao, pagador = 'ambos') {
-    const rateio = obterRateioPersonalizado(transacao);
+    const rateio = interpretarRateioTransacao(transacao);
     if (rateio && pagador !== 'ambos') return rateio[pagador] || 0;
     return Number(transacao?.amount || 0);
 }

@@ -110,7 +110,7 @@ async function salvarTransacao(event) {
         paid_by: document.getElementById('pagoPorLancamento').value,
         split_type: document.getElementById('divisaoLancamento').value,
         category_id: Number(document.getElementById('categoriaLancamento').value) || null,
-        custom_split_data: obterRateioPersonalizado()
+        custom_split_data: obterRateioFormulario()
     };
 
     if (payload.split_type === 'custom' && !payload.custom_split_data) return;
@@ -173,7 +173,8 @@ window.excluirTransacao = async function (id) {
     }
 };
 
-function obterRateioPersonalizado() {
+// Nome específico para evitar colisão com a helper global de app.js usada por Histórico e Relatórios.
+function obterRateioFormulario() {
     if (document.getElementById('divisaoLancamento').value !== 'custom') return null;
     const amount = Number(document.getElementById('valorLancamento').value);
     const eu = Number(document.getElementById('valorPagoEu').value);

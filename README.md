@@ -41,6 +41,10 @@ A autenticação possui cadastro, login OAuth2, JWT, armazenamento de sessão co
 
 O vínculo possui envio, aceite, recusa, consulta de parceiro e desconexão. O aceite cria ou reutiliza a sala financeira compartilhada e garante as categorias padrão. As notificações podem ser listadas, marcadas como lidas, apagadas e respondidas diretamente pelo menu superior. O WebSocket permanece disponível e o frontend utiliza polling como fallback quando a conexão em memória não estiver disponível.
 
+O domínio financeiro possui. Em despesas compartilhadas, o pagador principal começa como **Você** e a opção **Valores personalizados** permite informar quanto cada pessoa pagou. Por exemplo, em uma compra de R$ 1.000, pode-se registrar R$ 700 para você e R$ 300 para o parceiro. A API valida que os dois valores são não negativos e que sua soma corresponde ao valor total; o saldo entre parceiros usa essa diferença sem duplicar o cálculo.
+
+O campo de data utiliza o controle nativo do navegador e o roteador desfoca os elementos ativos antes de trocar de view, evitando que o calendário permaneça aberto durante a navegação. A interface utiliza Bootstrap Icons como biblioteca visual principal.
+
 O domínio financeiro possui:
 
 | Recurso | Endpoint principal |

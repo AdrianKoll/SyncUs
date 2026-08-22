@@ -68,7 +68,7 @@ function renderizarRelatorio() {
     gastos.forEach(item => {
         const name = item.category?.name || 'Outros';
         porCategoria[name] = (porCategoria[name] || 0) + valorDaTransacaoParaPagador(item, quem);
-        const rateio = obterRateioPersonalizado(item);
+        const rateio = interpretarRateioTransacao(item);
         if (rateio) {
             if (quem === 'ambos') {
                 porPagador.eu += rateio.eu;

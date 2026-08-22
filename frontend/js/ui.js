@@ -206,7 +206,7 @@ async function inicializarDashboard() {
             tabelaRecentes.innerHTML = dados.recent?.length
                 ? dados.recent.map(transaction => `
                     <tr>
-                        <td><div class="icone ${transaction.type === 'entrada' ? 'text-success' : 'text-danger'} rounded-2" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06)"><i class="fa-solid ${transaction.type === 'entrada' ? 'fa-arrow-down' : 'fa-arrow-up'}"></i></div></td>
+                        <td><div class="icone ${transaction.type === 'entrada' ? 'text-success' : 'text-danger'} rounded-2" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06)"><i class="bi ${transaction.type === 'entrada' ? 'bi-arrow-down' : 'bi-arrow-up'}"></i></div></td>
                         <td><div class="fw-semibold">${escapeHtml(transaction.description)}</div><div class="text-secondary small">${escapeHtml(transaction.category)}</div></td>
                         <td class="text-secondary small">${escapeHtml(transaction.date)}</td>
                         <td class="text-end ${transaction.type === 'entrada' ? 'tag-positiva' : 'tag-negativa'}">${transaction.type === 'entrada' ? '+' : '-'} ${formatCurrency(transaction.amount)}</td>

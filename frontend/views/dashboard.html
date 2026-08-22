@@ -1,6 +1,6 @@
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
     <div>
-        <h1 class="titulo-pagina mb-1">Resumo Financeiro <i class="fa-solid fa-sparkles text-primary small ms-1"></i></h1>
+        <h1 class="titulo-pagina mb-1">Resumo Financeiro <i class="bi bi-stars text-primary small ms-1"></i></h1>
         <p class="subtitulo-pagina mb-0">Visão geral das finanças do casal em <strong>período atual</strong></p>
     </div>
     <select id="dashboardMonth" class="form-select w-auto bg-transparent border rounded-pill px-3" aria-label="Mês do dashboard">
@@ -20,10 +20,10 @@
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-12 col-sm-6 col-xl-3"><div class="card-resumo card-azul"><div class="icone"><i class="fa-solid fa-wallet"></i></div><div class="label">Saldo Total Conjunto</div><div class="valor">Carregando...</div><div class="delta text-primary">Saldo do período selecionado</div><canvas id="sparkSaldo"></canvas></div></div>
-    <div class="col-12 col-sm-6 col-xl-3"><div class="card-resumo card-verde"><div class="icone"><i class="fa-solid fa-arrow-down"></i></div><div class="label">Entradas do Mês</div><div class="valor text-success">Carregando...</div><div class="delta text-success">Total recebido no período</div><canvas id="sparkEntradas"></canvas></div></div>
-    <div class="col-12 col-sm-6 col-xl-3"><div class="card-resumo card-vermelho"><div class="icone"><i class="fa-solid fa-arrow-up"></i></div><div class="label">Saídas do Mês</div><div class="valor text-danger">Carregando...</div><div class="delta text-danger">Total gasto no período</div><canvas id="sparkSaidas"></canvas></div></div>
-    <div class="col-12 col-sm-6 col-xl-3"><div class="card-resumo card-roxo"><div class="icone"><i class="fa-solid fa-people-group"></i></div><div class="label">Dívidas Mútuas</div><div class="valor" style="color:#A78BFA">Carregando...</div><div class="delta" style="color:#A78BFA"><i class="fa-solid fa-shield-halved"></i> Situação atual</div><canvas id="sparkDividas"></canvas></div></div>
+    <div class="col-12 col-sm-6 col-xl-3"><div class="card-resumo card-azul"><div class="icone"><i class="bi bi-wallet2"></i></div><div class="label">Saldo Total Conjunto</div><div class="valor">Carregando...</div><div class="delta text-primary">Saldo do período selecionado</div><canvas id="sparkSaldo"></canvas></div></div>
+    <div class="col-12 col-sm-6 col-xl-3"><div class="card-resumo card-verde"><div class="icone"><i class="bi bi-arrow-down"></i></div><div class="label">Entradas do Mês</div><div class="valor text-success">Carregando...</div><div class="delta text-success">Total recebido no período</div><canvas id="sparkEntradas"></canvas></div></div>
+    <div class="col-12 col-sm-6 col-xl-3"><div class="card-resumo card-vermelho"><div class="icone"><i class="bi bi-arrow-up"></i></div><div class="label">Saídas do Mês</div><div class="valor text-danger">Carregando...</div><div class="delta text-danger">Total gasto no período</div><canvas id="sparkSaidas"></canvas></div></div>
+    <div class="col-12 col-sm-6 col-xl-3"><div class="card-resumo card-roxo"><div class="icone"><i class="bi bi-people"></i></div><div class="label">Dívidas Mútuas</div><div class="valor" style="color:#A78BFA">Carregando...</div><div class="delta" style="color:#A78BFA"><i class="bi bi-shield-check"></i> Situação atual</div><canvas id="sparkDividas"></canvas></div></div>
 </div>
 
 <div class="row g-4 mb-4">
@@ -35,9 +35,9 @@
     </div>
     <div class="col-12 col-xl-4">
         <div class="card p-4 h-100 position-relative overflow-hidden"><h5 class="mb-3 fw-bold">Ações rápidas</h5>
-            <a href="#/transactions" class="acao-rapida acao-verde" onclick="navegar('transactions')"><div class="d-flex align-items-center gap-3"><div class="icone-acao"><i class="fa-solid fa-plus"></i></div><div><div class="fw-bold">Novo lançamento</div><div class="small opacity-75">Registrar entrada ou saída</div></div></div><i class="fa-solid fa-chevron-right"></i></a>
-            <a href="#/history" class="acao-rapida acao-azul" onclick="navegar('history')"><div class="d-flex align-items-center gap-3"><div class="icone-acao"><i class="fa-solid fa-list"></i></div><div><div class="fw-bold">Ver histórico</div><div class="small opacity-75">Consultar todos os lançamentos</div></div></div><i class="fa-solid fa-chevron-right"></i></a>
-            <a href="#/reports" class="acao-rapida acao-vermelha" onclick="navegar('reports')"><div class="d-flex align-items-center gap-3"><div class="icone-acao"><i class="fa-solid fa-chart-line"></i></div><div><div class="fw-bold">Ver relatórios</div><div class="small opacity-75">Analisar o período</div></div></div><i class="fa-solid fa-chevron-right"></i></a>
+            <a href="#/transactions" class="acao-rapida acao-verde" onclick="navegar('transactions')"><div class="d-flex align-items-center gap-3"><div class="icone-acao"><i class="bi bi-plus"></i></div><div><div class="fw-bold">Novo lançamento</div><div class="small opacity-75">Registrar entrada ou saída</div></div></div><i class="bi bi-chevron-right"></i></a>
+            <a href="#/history" class="acao-rapida acao-azul" onclick="navegar('history')"><div class="d-flex align-items-center gap-3"><div class="icone-acao"><i class="bi bi-list-ul"></i></div><div><div class="fw-bold">Ver histórico</div><div class="small opacity-75">Consultar todos os lançamentos</div></div></div><i class="bi bi-chevron-right"></i></a>
+            <a href="#/reports" class="acao-rapida acao-vermelha" onclick="navegar('reports')"><div class="d-flex align-items-center gap-3"><div class="icone-acao"><i class="bi bi-graph-up"></i></div><div><div class="fw-bold">Ver relatórios</div><div class="small opacity-75">Analisar o período</div></div></div><i class="bi bi-chevron-right"></i></a>
         </div>
     </div>
 </div>
@@ -45,7 +45,7 @@
 <div class="row g-4">
     <div class="col-12 col-xl-4"><div class="card p-4 h-100"><h5 class="mb-3 fw-bold">Gastos por categoria</h5><div class="d-flex justify-content-center mb-3"><div style="width:220px;height:220px"><canvas id="graficoCategorias"></canvas></div></div><ul id="categoriasDashboard" class="list-unstyled small mb-0"><li class="text-secondary">Carregando categorias...</li></ul></div></div>
     <div class="col-12 col-xl-5"><div class="card p-4 h-100"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0 fw-bold">Últimas transações</h5><a href="#/history" class="small text-decoration-none" onclick="navegar('history')">Ver todas</a></div><div class="table-responsive"><table class="table table-dark table-borderless mb-0"><tbody class="ultimas-transacoes-lista"><tr><td colspan="4" class="text-center text-secondary py-4">Carregando lançamentos...</td></tr></tbody></table></div></div></div>
-    <div class="col-12 col-xl-3"><div class="card p-4 h-100"><h5 class="mb-3 fw-bold">Saldo entre vocês</h5><div class="saldo-entre"><div class="avatares-saldo"><div class="avatar-saldo" id="saldoAvatarAtual">EU</div><i class="fa-solid fa-right-left arrow-saldo"></i><div class="avatar-saldo" id="saldoAvatarParceiro">?</div></div><div id="saldoEntreMensagem" class="text-secondary small mb-1">Carregando vínculo...</div><div id="saldoEntreValor" class="valor-saldo">R$ 0,00</div><a href="#/settings" onclick="navegar('settings')" class="btn btn-outline-primary w-100 mt-3 rounded-pill">Ver vínculo</a></div></div></div>
+    <div class="col-12 col-xl-3"><div class="card p-4 h-100"><h5 class="mb-3 fw-bold">Saldo entre vocês</h5><div class="saldo-entre"><div class="avatares-saldo"><div class="avatar-saldo" id="saldoAvatarAtual">EU</div><i class="bi bi-arrow-left-right arrow-saldo"></i><div class="avatar-saldo" id="saldoAvatarParceiro">?</div></div><div id="saldoEntreMensagem" class="text-secondary small mb-1">Carregando vínculo...</div><div id="saldoEntreValor" class="valor-saldo">R$ 0,00</div><a href="#/settings" onclick="navegar('settings')" class="btn btn-outline-primary w-100 mt-3 rounded-pill">Ver vínculo</a></div></div></div>
 </div>
 
-<div class="mt-4 small text-secondary d-flex align-items-center gap-2"><i class="fa-regular fa-lightbulb text-warning"></i>Os valores são atualizados a partir dos lançamentos registrados para o casal.</div>
+<div class="mt-4 small text-secondary d-flex align-items-center gap-2"><i class="bi bi-lightbulb text-warning"></i>Os valores são atualizados a partir dos lançamentos registrados para o casal.</div>
