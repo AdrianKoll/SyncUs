@@ -248,6 +248,8 @@
      SCRIPT (organizado, sem evento duplicado)
      ===================================================== -->
 <script>
+if (!window.__syncusSettingsViewBound) {
+window.__syncusSettingsViewBound = true;
 document.addEventListener('viewCarregada', async () => {
     const user = await checkAuth();
     if (!user) return;
@@ -260,6 +262,7 @@ document.addEventListener('viewCarregada', async () => {
     // Carrega dados do parceiro se conectado
     await carregarParceiro();
 });
+}
 
 window.copyToken = () => {
     navigator.clipboard.writeText(document.getElementById('myToken').value);
@@ -267,48 +270,55 @@ window.copyToken = () => {
 };
 
 window.refreshToken = async () => {
-    const r = await fetch(`${API_URL}/users/token/refresh`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    });
-    if (r.ok) {
-        const u = await r.json();
-        document.getElementById('myToken').value = u.connection_token || u.token || 'Nenhum';
+    try {
+        const user = await apiRequest('/users/token/refresh', { method: 'POST' });
+        document.getElementById('myToken').value = user.connection_token || 'Nenhum token gerado';
+        localStorage.setItem('user', JSON.stringify(user));
         showToast('Novo token gerado!', 'success');
-    } else showToast('Erro ao gerar token', 'danger');
+    } catch (error) {
+        showToast(handleApiError(error, 'Erro ao gerar token.'), 'danger');
+    }
 };
 
 window.enviarPedidoVinculo = async () => {
     const tok = document.getElementById('partnerToken').value.trim();
     if (!tok) return showToast('Cole o token primeiro', 'warning');
 
-    const r = await fetch(`${API_URL}/couple/invite/send`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ token: tok })
-    });
-    const d = await r.json();
-    if (r.ok) {
-        showToast('Pedido enviado!', 'success');
+    try {
+        const response = await apiRequest('/couple/invite/send', {
+            method: 'POST',
+            body: { token: tok }
+        });
+        showToast(response.mensagem || 'Pedido enviado!', 'success');
         document.getElementById('statusPedido').textContent = 'Aguardando aceite';
         document.getElementById('partnerToken').value = '';
-    } else showToast(d.detail || 'Erro', 'danger');
+    } catch (error) {
+        showToast(handleApiError(error, 'Não foi possível enviar o pedido.'), 'danger');
+    }
 };
 
-window.visualizarPerfilParceiro = () => {
-    showToast('Abrindo perfil da parceira...', 'info');
+window.visualizarPerfilParceiro = async () => {
+    try {
+        const connection = await apiRequest('/couple/partner');
+        if (!connection.conectado || !connection.parceiro) {
+            showToast('Nenhum parceiro conectado.', 'warning');
+            return;
+        }
+        showToast(`${connection.parceiro.nome} — ${connection.parceiro.email}`, 'info');
+    } catch (error) {
+        showToast(handleApiError(error, 'Não foi possível carregar o perfil do parceiro.'), 'danger');
+    }
 };
 
 window.desvincularParceiro = async () => {
     if (!confirm('Tem certeza que quer desvincular? Essa ação não pode ser desfeita.')) return;
-    await fetch(`${API_URL}/couple/disconnect`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    });
-    showToast('Vínculo desfeito com sucesso', 'warning');
+    try {
+        const response = await apiRequest('/couple/disconnect', { method: 'POST' });
+        showToast(response.mensagem || 'Vínculo desfeito com sucesso', 'warning');
+    } catch (error) {
+        showToast(handleApiError(error, 'Não foi possível desfazer o vínculo.'), 'danger');
+        return;
+    }
     
     // Atualiza o card para estado "sem conexão" imediatamente
     document.getElementById('tituloParceiro').innerHTML = '<i class="fa-solid fa-link-slash me-2 text-secondary"></i>Status da conexão';
@@ -319,17 +329,21 @@ window.desvincularParceiro = async () => {
     setTimeout(() => location.reload(), 900);
 };
 
-window.excluirTodosDados = () => {
-    if (confirm('CERTEZA MESMA? Todos os lançamentos serão apagados permanentemente!')) {
-        showToast('Dados excluídos (simulação)', 'danger');
+window.excluirTodosDados = async () => {
+    if (!confirm('CERTEZA MESMA? Todos os lançamentos financeiros da sala serão apagados permanentemente!')) return;
+    try {
+        const response = await apiRequest('/transactions/all', { method: 'DELETE' });
+        showToast(`${response.deleted || 0} lançamento(s) excluído(s).`, 'warning');
+        setTimeout(() => location.reload(), 900);
+    } catch (error) {
+        showToast(handleApiError(error, 'Não foi possível excluir os lançamentos.'), 'danger');
     }
 };
 
 async function carregarParceiro() {
     try {
-        const r = await fetch(`${API_URL}/couple/partner`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
+        const dados = await apiRequest('/couple/partner');
+        const r = { ok: true };
         
         const titulo = document.getElementById('tituloParceiro');
         const conectadoDiv = document.getElementById('parceiroConectado');
@@ -337,8 +351,6 @@ async function carregarParceiro() {
         const cardParceiro = document.getElementById('cardParceiro');
         
         if (r.ok) {
-            const dados = await r.json();
-            
             // Backend retorna: { conectado: true/false, parceiro: {...} }
             if (dados.conectado && dados.parceiro) {
                 const p = dados.parceiro;
@@ -376,6 +388,8 @@ async function carregarParceiro() {
 // SEGURANÇA: Handler do formulário de perfil
 // Exige senha atual para qualquer alteração
 // =====================================================
+if (!window.__syncusSettingsSubmitBound) {
+window.__syncusSettingsSubmitBound = true;
 document.addEventListener('submit', async (e) => {
     if (e.target.id !== 'profileForm') return;
     e.preventDefault();
@@ -430,18 +444,19 @@ document.addEventListener('submit', async (e) => {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Salvando...';
     
     try {
-        const r = await fetch(`${API_URL}/users/me`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify(dados)
-        });
+        let resposta;
+        try {
+            resposta = await apiRequest('/users/me', { method: 'PUT', body: dados });
+        } catch (error) {
+            showToast(handleApiError(error, 'Erro ao salvar dados'), 'danger');
+            if (error.message && error.message.includes('Senha atual incorreta')) {
+                document.getElementById('currentPassword').focus();
+                document.getElementById('currentPassword').select();
+            }
+            return;
+        }
         
-        const resposta = await r.json();
-        
-        if (r.ok) {
+        if (resposta) {
             showToast('Dados salvos com sucesso!', 'success');
             // Limpar campos de senha
             document.getElementById('newPassword').value = '';
@@ -451,18 +466,14 @@ document.addEventListener('submit', async (e) => {
             if (window.atualizarNomeUsuario) {
                 window.atualizarNomeUsuario(resposta.name);
             }
-        } else {
-            showToast(resposta.detail || 'Erro ao salvar dados', 'danger');
-            if (resposta.detail && resposta.detail.includes('Senha atual incorreta')) {
-                document.getElementById('currentPassword').focus();
-                document.getElementById('currentPassword').select();
-            }
+            localStorage.setItem('user', JSON.stringify(resposta));
         }
     } catch (err) {
-        showToast('Erro de conexão ao salvar dados', 'danger');
+        showToast(handleApiError(err, 'Erro ao salvar dados'), 'danger');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i>Salvar dados da conta';
     }
 });
+}
 </script>

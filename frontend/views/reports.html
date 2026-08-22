@@ -1,242 +1,80 @@
-<h1 class="titulo-pagina mb-1">
-    <i class="fa-solid fa-chart-line text-primary me-2"></i>Relatórios
-</h1>
-<p class="subtitulo-pagina">Análises completas e relatórios exportáveis do financeiro do casal</p>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4"><div><h1 class="titulo-pagina mb-1"><i class="fa-solid fa-chart-line text-primary me-2"></i>Relatórios</h1><p class="subtitulo-pagina">Análises e relatórios exportáveis do financeiro do casal</p></div></div>
 
+<div class="card p-4 mb-4"><div class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label small">Mês / Ano</label><input type="month" id="relatorioPeriodo" class="form-control"></div><div class="col-md-3"><label class="form-label small">Quem pagou</label><select id="filtroQuem" class="form-select"><option value="ambos">Todos</option><option value="eu">Você</option><option value="parceira">Parceiro(a)</option></select></div><div class="col-md-3"><label class="form-label small">Formato</label><select id="formatoRelatorio" class="form-select"><option value="csv">CSV</option><option value="txt">TXT</option><option value="json">JSON</option></select></div><div class="col-md-3"><button id="gerarRelatorioBtn" class="btn btn-primary w-100 py-2 fw-bold rounded-pill"><i class="fa-solid fa-file-arrow-down me-2"></i>Gerar relatório</button></div></div></div>
 
-<!-- FILTROS + BOTÃO GERAR RELATÓRIO -->
-<div class="card p-4 mb-4">
-    <div class="row g-3 align-items-end">
-        <!-- MÊS / ANO -->
-        <div class="col-md-3">
-            <label class="form-label small"><i class="fa-regular fa-calendar-check me-1 text-secondary"></i>Mês / Ano</label>
-            <div class="input-group">
-                <span class="input-group-text bg-transparent border-end-0"><i class="fa-regular fa-calendar text-secondary"></i></span>
-                <input type="month" class="form-control border-start-0" value="2026-08">
-            </div>
-        </div>
+<div class="row g-4 mb-4"><div class="col-md-3"><div class="card-resumo card-azul"><div class="icone"><i class="fa-solid fa-wallet"></i></div><div class="label">Saldo Final</div><div id="relatorioSaldo" class="valor">Carregando...</div></div></div><div class="col-md-3"><div class="card-resumo card-verde"><div class="icone"><i class="fa-solid fa-arrow-down"></i></div><div class="label">Total Entradas</div><div id="relatorioEntradas" class="valor text-success">Carregando...</div></div></div><div class="col-md-3"><div class="card-resumo card-vermelho"><div class="icone"><i class="fa-solid fa-arrow-up"></i></div><div class="label">Total Saídas</div><div id="relatorioSaidas" class="valor text-danger">Carregando...</div></div></div><div class="col-md-3"><div class="card-resumo card-roxo"><div class="icone"><i class="fa-solid fa-basket-shopping"></i></div><div class="label">Transações</div><div id="relatorioQuantidade" class="valor" style="color:#A78BFA">Carregando...</div></div></div></div>
 
-        <!-- QUEM (ícone troca automaticamente) -->
-        <div class="col-md-3">
-            <label class="form-label small"><i class="fa-solid fa-people-group me-1 text-secondary"></i>Quem</label>
-            <div class="input-group">
-                <span class="input-group-text" id="iconeQuem">
-                    <i class="bi bi-people-fill" style="color: #3B82F6;"></i>
-                </span>
-                <select class="form-select" id="filtroQuem">
-                    <option value="ambos" selected>Ambos</option>
-                    <option value="voce">Apenas você</option>
-                    <option value="parceira">Apenas parceira</option>
-                </select>
-            </div>
-        </div>
+<div class="row g-4 mb-4"><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Gastos por categoria</h5><div style="height:260px"><canvas id="grafCatRel"></canvas></div></div></div><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-column text-primary me-2"></i>Evolução diária</h5><div style="height:260px"><canvas id="grafMesRel"></canvas></div></div></div></div>
 
-        <!-- FORMATO (ícone troca automaticamente) -->
-        <div class="col-md-3">
-            <label class="form-label small"><i class="fa-solid fa-file-export me-1 text-secondary"></i>Formato</label>
-            <div class="input-group">
-                <span class="input-group-text" id="iconeFormato">
-                    <i class="bi bi-filetype-csv" style="color: #10B981;"></i>
-                </span>
-                <select class="form-select" id="formatoRelatorio">
-                    <option value="csv" selected>CSV (Excel / Planilhas)</option>
-                    <option value="txt">TXT (Resumo)</option>
-                    <option value="json">JSON (Dados brutos)</option>
-                </select>
-            </div>
-        </div>
+<div class="row g-4"><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Distribuição por pagador</h5><div style="height:220px"><canvas id="grafQuemRel"></canvas></div></div></div><div class="col-md-6"><div class="card p-4 h-100"><h5 class="fw-bold mb-3"><i class="fa-solid fa-sparkles text-primary me-2"></i>Resumo do período</h5><ul id="resumoRelatorio" class="list-unstyled small lh-lg"><li class="text-secondary">Carregando dados...</li></ul></div></div></div>
 
-        <!-- BOTÃO GERAR -->
-        <div class="col-md-3">
-            <button class="btn btn-primary w-100 py-2 fw-bold rounded-pill" onclick="gerarRelatorio()">
-                <i class="fa-solid fa-file-arrow-down me-2"></i>Gerar Relatório
-            </button>
-        </div>
-    </div>
-</div>
-
-
-<!-- CARDS DE RESUMO -->
-<div class="row g-4 mb-4">
-    <div class="col-md-3"><div class="card-resumo card-azul"><div class="icone"><i class="fa-solid fa-wallet"></i></div><div class="label">Saldo Final</div><div class="valor">R$ 1.250,00</div></div></div>
-    <div class="col-md-3"><div class="card-resumo card-verde"><div class="icone"><i class="fa-solid fa-arrow-down"></i></div><div class="label">Total Entradas</div><div class="valor text-success">R$ 3.850,00</div></div></div>
-    <div class="col-md-3"><div class="card-resumo card-vermelho"><div class="icone"><i class="fa-solid fa-arrow-up"></i></div><div class="label">Total Saídas</div><div class="valor text-danger">R$ 2.600,00</div></div></div>
-    <div class="col-md-3"><div class="card-resumo card-roxo"><div class="icone"><i class="fa-solid fa-basket-shopping"></i></div><div class="label">Qtde Transações</div><div class="valor" style="color:#A78BFA">42</div></div></div>
-</div>
-
-
-<!-- GRÁFICOS -->
-<div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="card p-4 h-100">
-            <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Gastos por Categoria</h5>
-            <div style="height:260px"><canvas id="grafCatRel"></canvas></div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card p-4 h-100">
-            <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-column text-primary me-2"></i>Evolução Mensal</h5>
-            <div style="height:260px"><canvas id="grafMesRel"></canvas></div>
-        </div>
-    </div>
-</div>
-
-
-<div class="row g-4">
-    <div class="col-md-6">
-        <div class="card p-4 h-100">
-            <h5 class="fw-bold mb-3"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Quem gastou mais</h5>
-            <div style="height:220px"><canvas id="grafQuemRel"></canvas></div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card p-4 h-100">
-            <h5 class="fw-bold mb-3"><i class="fa-solid fa-sparkles text-primary me-2"></i>Resumo Inteligente</h5>
-            <ul class="list-unstyled small lh-lg">
-                <li class="py-1 border-bottom"><i class="fa-solid fa-circle-check text-success me-2"></i>Seu saldo este mês foi <strong>positivo em R$ 1.250</strong></li>
-                <li class="py-1 border-bottom"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Saídas aumentaram <strong>15% em relação ao mês passado</strong></li>
-                <li class="py-1 border-bottom"><i class="fa-solid fa-house text-primary me-2"></i>Moradia representa <strong>38% dos seus gastos</strong></li>
-                <li class="py-1"><i class="fa-solid fa-heart text-danger me-2"></i>Adrian deve para parceira: <strong>R$ 150,00</strong></li>
-            </ul>
-        </div>
-    </div>
-</div>
-
-
-<!-- ==============================================
-     JAVASCRIPT — ÍCONES DINÂMICOS + GRÁFICOS + GERAR RELATÓRIO
-     ============================================== -->
 <script>
-document.addEventListener('viewCarregada', () => {
-    Chart.defaults.color = '#8A93B2';
-    Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+var relatorioDados = null;
+var relatorioTransacoes = [];
+var relatorioCharts = [];
 
-
-    // ==========================
-    // TROCA ÍCONE DO FILTRO "QUEM"
-    // ==========================
-    const filtroQuem = document.getElementById('filtroQuem');
-    const iconeQuem = document.getElementById('iconeQuem');
-
-    function trocarIconeQuem(valor) {
-        switch(valor) {
-            case 'ambos':
-                iconeQuem.innerHTML = '<i class="bi bi-people-fill" style="color: #3B82F6;"></i>';
-                break;
-            case 'voce':
-                iconeQuem.innerHTML = '<i class="bi bi-person-fill" style="color: #10B981;"></i>';
-                break;
-            case 'parceira':
-                iconeQuem.innerHTML = '<i class="bi bi-person-heart" style="color: #8B5CF6;"></i>';
-                break;
-        }
+async function inicializarRelatorios() {
+    const periodo = document.getElementById('relatorioPeriodo');
+    if (!periodo) return;
+    if (!periodo.dataset.bound) {
+        periodo.value = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+        periodo.addEventListener('change', carregarRelatorioDados);
+        document.getElementById('filtroQuem').addEventListener('change', renderizarRelatorio);
+        document.getElementById('gerarRelatorioBtn').addEventListener('click', gerarRelatorio);
+        periodo.dataset.bound = 'true';
     }
-    filtroQuem.addEventListener('change', e => trocarIconeQuem(e.target.value));
+    await carregarRelatorioDados();
+}
 
-
-    // ==========================
-    // TROCA ÍCONE DO FILTRO "FORMATO"
-    // ==========================
-    const filtroFormato = document.getElementById('formatoRelatorio');
-    const iconeFormato = document.getElementById('iconeFormato');
-
-    function trocarIconeFormato(valor) {
-        switch(valor) {
-            case 'csv':
-                iconeFormato.innerHTML = '<i class="bi bi-filetype-csv" style="color: #10B981;"></i>';
-                break;
-            case 'txt':
-                iconeFormato.innerHTML = '<i class="bi bi-filetype-txt" style="color: #3B82F6;"></i>';
-                break;
-            case 'json':
-                iconeFormato.innerHTML = '<i class="bi bi-filetype-json" style="color: #F59E0B;"></i>';
-                break;
-        }
+async function carregarRelatorioDados() {
+    const [year, month] = document.getElementById('relatorioPeriodo').value.split('-').map(Number);
+    try {
+        relatorioDados = await apiRequest(`/transactions/dashboard?year=${year}&month=${month}`);
+        relatorioTransacoes = await apiRequest(`/transactions/?start_date=${encodeURIComponent(`${year}-${String(month).padStart(2, '0')}-01T00:00:00`)}&end_date=${encodeURIComponent(`${month === 12 ? year + 1 : year}-${String(month === 12 ? 1 : month + 1).padStart(2, '0')}-01T00:00:00`)}&limit=500`);
+        renderizarRelatorio();
+    } catch (error) {
+        showToast(handleApiError(error, 'Não foi possível carregar o relatório.'), 'danger');
     }
-    filtroFormato.addEventListener('change', e => trocarIconeFormato(e.target.value));
+}
 
+function renderizarRelatorio() {
+    if (!relatorioDados) return;
+    const summary = relatorioDados.summary;
+    document.getElementById('relatorioSaldo').textContent = formatCurrency(summary.total_balance);
+    document.getElementById('relatorioEntradas').textContent = formatCurrency(summary.monthly_income);
+    document.getElementById('relatorioSaidas').textContent = formatCurrency(summary.monthly_expenses);
+    document.getElementById('relatorioQuantidade').textContent = relatorioTransacoes.length;
 
-    // ==========================
-    // GRÁFICOS
-    // ==========================
-    new Chart(document.getElementById('grafCatRel'), {
-        type: 'doughnut',
-        data: { labels:['Moradia','Alimentação','Transporte','Lazer','Outros'],
-            datasets:[{data:[1000,650,400,300,250], backgroundColor:['#3B82F6','#10B981','#F59E0B','#8B5CF6','#6B7280'], borderWidth:0}] },
-        options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{position:'bottom'}} }
-    });
+    const quem = document.getElementById('filtroQuem').value;
+    const filtered = quem === 'ambos' ? relatorioTransacoes : relatorioTransacoes.filter(item => item.paid_by === quem);
+    const gastos = filtered.filter(item => item.type === 'saida');
+    const porCategoria = {};
+    const porPagador = { eu: 0, parceira: 0, ambos: 0 };
+    gastos.forEach(item => { const name = item.category?.name || 'Outros'; porCategoria[name] = (porCategoria[name] || 0) + Number(item.amount || 0); porPagador[item.paid_by] = (porPagador[item.paid_by] || 0) + Number(item.amount || 0); });
 
-    new Chart(document.getElementById('grafMesRel'), {
-        type: 'bar',
-        data: { labels:['Mar','Abr','Mai','Jun','Jul','Ago'],
-            datasets:[
-                {label:'Entradas', data:[3200,3400,3500,3600,3550,3850], backgroundColor:'#10B981', borderRadius:8},
-                {label:'Saídas',   data:[2100,2200,2250,2300,2260,2600], backgroundColor:'#EF4444', borderRadius:8}
-            ]},
-        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}} }
-    });
+    relatorioCharts.forEach(chart => chart.destroy());
+    relatorioCharts = [];
+    if (typeof Chart !== 'undefined') {
+        relatorioCharts.push(new Chart(document.getElementById('grafCatRel'), { type: 'doughnut', data: { labels: Object.keys(porCategoria), datasets: [{ data: Object.values(porCategoria), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#6B7280', '#EC4899'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } }));
+        const daily = {};
+        filtered.forEach(item => { const day = formatDate(item.date); daily[day] = daily[day] || { entrada: 0, saida: 0 }; daily[day][item.type] = (daily[day][item.type] || 0) + Number(item.amount || 0); });
+        relatorioCharts.push(new Chart(document.getElementById('grafMesRel'), { type: 'bar', data: { labels: Object.keys(daily), datasets: [{ label: 'Entradas', data: Object.values(daily).map(item => item.entrada), backgroundColor: '#10B981', borderRadius: 6 }, { label: 'Saídas', data: Object.values(daily).map(item => item.saida), backgroundColor: '#EF4444', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } }));
+        relatorioCharts.push(new Chart(document.getElementById('grafQuemRel'), { type: 'bar', data: { labels: ['Você', 'Parceiro(a)', 'Ambos'], datasets: [{ label: 'Gastos R$', data: [porPagador.eu || 0, porPagador.parceira || 0, porPagador.ambos || 0], backgroundColor: ['#3B82F6', '#EC4899', '#8B5CF6'], borderRadius: 10 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }));
+    }
 
-    new Chart(document.getElementById('grafQuemRel'), {
-        type: 'bar',
-        data: { labels:['Você','Parceira','Ambos'],
-            datasets:[{label:'Gastos R$', data:[1100,950,550], backgroundColor:['#3B82F6','#EC4899','#8B5CF6'], borderRadius:10}] },
-        options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }
-    });
+    const maiorCategoria = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
+    document.getElementById('resumoRelatorio').innerHTML = `<li class="py-1 border-bottom"><i class="fa-solid fa-circle-check text-success me-2"></i>Saldo do período: <strong>${formatCurrency(summary.total_balance)}</strong></li><li class="py-1 border-bottom"><i class="fa-solid fa-arrow-up text-danger me-2"></i>Saídas registradas: <strong>${formatCurrency(summary.monthly_expenses)}</strong></li><li class="py-1 border-bottom"><i class="fa-solid fa-folder text-primary me-2"></i>Maior categoria: <strong>${maiorCategoria ? `${escapeHtml(maiorCategoria[0])} (${formatCurrency(maiorCategoria[1])})` : 'Nenhuma'}</strong></li><li class="py-1"><i class="fa-solid fa-list text-info me-2"></i>Total de registros: <strong>${filtered.length}</strong></li>`;
+}
 
-
-    // ==========================
-    // FUNÇÃO GERAR RELATÓRIO
-    // ==========================
-    window.gerarRelatorio = function() {
-        const formato = document.getElementById('formatoRelatorio').value;
-        const data = new Date().toISOString().slice(0,10);
-        let conteudo, nomeArq, tipo;
-
-        if (formato === 'csv') {
-            conteudo = 'Tipo,Categoria,Descricao,Data,Valor\nEntrada,Receita,Salario Adrian,05/08/2026,3850.00\nSaida,Moradia,Aluguel,01/08/2026,-1000.00\nSaida,Alimentacao,Supermercado,06/08/2026,-650.00\nSaida,Transporte,Combustivel,04/08/2026,-400.00';
-            nomeArq = `relatorio_syncus_${data}.csv`;
-            tipo = 'text/csv;charset=utf-8;';
-        } else if (formato === 'json') {
-            conteudo = JSON.stringify({
-                periodo:'Agosto/2026',
-                resumo:{ entradas:3850, saidas:2600, saldo:1250, transacoes:42 },
-                categorias:{ moradia:1000, alimentacao:650, transporte:400, lazer:300, outros:250 },
-                geradoEm: new Date().toISOString()
-            }, null, 2);
-            nomeArq = `relatorio_syncus_${data}.json`;
-            tipo = 'application/json';
-        } else {
-            // TXT — sem emojis, limpo e profissional
-            conteudo = `===========================================
-   RELATORIO FINANCEIRO SYNCUS
-   Periodo: Agosto de 2026
-===========================================
-
-ENTRADAS TOTAIS:    R$ 3.850,00
-SAIDAS TOTAIS:      R$ 2.600,00
-SALDO FINAL:        R$ 1.250,00
-TRANSACOES:         42
-
-GASTOS POR CATEGORIA:
-  - Moradia........... R$ 1.000,00 (38%)
-  - Alimentacao....... R$   650,00 (25%)
-  - Transporte........ R$   400,00 (15%)
-  - Lazer............. R$   300,00 (12%)
-  - Outros............ R$   250,00 (10%)
-
-===========================================
-Gerado em: ${new Date().toLocaleString('pt-BR')}
-===========================================`;
-            nomeArq = `relatorio_syncus_${data}.txt`;
-            tipo = 'text/plain;charset=utf-8;';
-        }
-
-        const blob = new Blob([conteudo], { type: tipo });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = nomeArq;
-        a.click();
-        showToast(`Relatorio ${formato.toUpperCase()} gerado e baixado!`, 'success');
-    };
-});
+function gerarRelatorio() {
+    if (!relatorioDados) return showToast('Aguarde o carregamento dos dados.', 'warning');
+    const formato = document.getElementById('formatoRelatorio').value;
+    const summary = relatorioDados.summary;
+    const payload = { periodo: relatorioDados.period, resumo: summary, transacoes: relatorioTransacoes, geradoEm: new Date().toISOString() };
+    const filenameBase = `syncus-relatorio-${document.getElementById('relatorioPeriodo').value}`;
+    if (formato === 'json') downloadTextFile(`${filenameBase}.json`, JSON.stringify(payload, null, 2), 'application/json');
+    else if (formato === 'txt') downloadTextFile(`${filenameBase}.txt`, `RELATÓRIO FINANCEIRO SYNCUS\nPeríodo: ${payload.periodo.month}/${payload.periodo.year}\nEntradas: ${formatCurrency(summary.monthly_income)}\nSaídas: ${formatCurrency(summary.monthly_expenses)}\nSaldo: ${formatCurrency(summary.total_balance)}\nTransações: ${relatorioTransacoes.length}\n`, 'text/plain;charset=utf-8');
+    else { const rows = [['Data', 'Descrição', 'Categoria', 'Tipo', 'Pago por', 'Valor'], ...relatorioTransacoes.map(item => [formatDate(item.date), item.description, item.category?.name || 'Outros', item.type, item.paid_by, item.amount])]; downloadTextFile(`${filenameBase}.csv`, '\ufeff' + rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(';')).join('\n'), 'text/csv;charset=utf-8'); }
+    showToast(`Relatório ${formato.toUpperCase()} gerado.`, 'success');
+}
 </script>
