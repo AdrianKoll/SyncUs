@@ -2,7 +2,7 @@ import calendar
 import json
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_
@@ -18,6 +18,7 @@ from ..schemas.transaction import (
     Transaction as TransactionSchema,
     TransactionCreate,
     TransactionUpdate,
+    TransactionReport,
 )
 from ..services.room_service import ensure_default_categories
 
@@ -187,7 +188,7 @@ def _responsibility_values(transaction: Transaction):
 def _serialize_transaction(transaction: Transaction):
     return {
         "id": transaction.id,
-        "amount": float(transaction.amount),
+        "amount": f"{_as_money(transaction.amount, 'Valor'):.2f}",
         "description": transaction.description,
         "category_id": transaction.category_id,
         "type": transaction.type,
@@ -390,6 +391,111 @@ def delete_transaction(
     db.delete(db_transaction)
     db.commit()
     return {"message": "Lançamento excluído com sucesso"}
+
+
+def _transaction_value_for_payer(transaction: Transaction, payer: str) -> Decimal:
+    paid_by = getattr(transaction.paid_by, "value", transaction.paid_by)
+    if payer == "ambos":
+        return _as_money(transaction.amount, "Valor")
+
+    if getattr(transaction.split_type, "value", transaction.split_type) == SplitType.CUSTOM.value:
+        paid_eu, paid_partner = _payment_values(transaction)
+        return paid_eu if payer == PaidBy.EU.value else paid_partner
+
+    return _as_money(transaction.amount, "Valor") if paid_by == payer else ZERO
+
+
+def _transaction_belongs_to_payer(transaction: Transaction, payer: str) -> bool:
+    if payer == "ambos":
+        return True
+    return _transaction_value_for_payer(transaction, payer) > ZERO
+
+
+@router.get("/report", response_model=TransactionReport)
+def get_report(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    payer: Literal["eu", "parceira", "ambos"] = "ambos",
+):
+    room_id = _room_required(current_user)
+    selected_year, selected_month, period_start, period_end = _period_bounds(year, month)
+    transactions = _apply_transaction_filters(
+        db.query(Transaction), room_id, period_start, period_end
+    ).order_by(Transaction.date.asc(), Transaction.id.asc()).all()
+    filtered = [
+        transaction
+        for transaction in transactions
+        if _transaction_belongs_to_payer(transaction, payer)
+    ]
+
+    income = db.query(func.coalesce(func.sum(Transaction.amount), 0)).filter(
+        Transaction.room_id == room_id,
+        Transaction.type == TransactionType.ENTRADA,
+        Transaction.date >= period_start,
+        Transaction.date < period_end,
+    ).scalar() or ZERO
+    expenses = db.query(func.coalesce(func.sum(Transaction.amount), 0)).filter(
+        Transaction.room_id == room_id,
+        Transaction.type == TransactionType.SAIDA,
+        Transaction.date >= period_start,
+        Transaction.date < period_end,
+    ).scalar() or ZERO
+
+    categories: dict[str, Decimal] = {}
+    payer_totals = {"eu": ZERO, "parceira": ZERO, "ambos": ZERO}
+    daily: dict[str, dict[str, Decimal]] = {}
+    for transaction in filtered:
+        amount_for_payer = _transaction_value_for_payer(transaction, payer)
+        day = transaction.date.strftime("%Y-%m-%d")
+        daily.setdefault(day, {"entrada": ZERO, "saida": ZERO})
+        type_value = getattr(transaction.type, "value", transaction.type)
+        daily[day][type_value] += amount_for_payer
+
+        paid_by = getattr(transaction.paid_by, "value", transaction.paid_by)
+        if getattr(transaction.split_type, "value", transaction.split_type) == SplitType.CUSTOM.value:
+            paid_eu, paid_partner = _payment_values(transaction)
+            if payer == "ambos":
+                payer_totals["eu"] += paid_eu
+                payer_totals["parceira"] += paid_partner
+            elif payer == PaidBy.EU.value:
+                payer_totals["eu"] += paid_eu
+            else:
+                payer_totals["parceira"] += paid_partner
+        elif payer == "ambos":
+            payer_totals[paid_by] = payer_totals.get(paid_by, ZERO) + _as_money(
+                transaction.amount, "Valor"
+            )
+        else:
+            payer_totals[payer] += amount_for_payer
+
+        if type_value == TransactionType.SAIDA.value:
+            category_name = transaction.category.name if transaction.category else "Outros"
+            categories[category_name] = categories.get(category_name, ZERO) + amount_for_payer
+
+    return {
+        "period": {"year": selected_year, "month": selected_month},
+        "summary": {
+            "total_balance": income - expenses,
+            "monthly_income": income,
+            "monthly_expenses": expenses,
+            "monthly_balance": income - expenses,
+            "debt_summary": "Relatório do período",
+        },
+        "aggregates": {
+            "transaction_count": len(filtered),
+            "categories": [
+                {"name": name, "value": value}
+                for name, value in sorted(
+                    categories.items(), key=lambda item: item[1], reverse=True
+                )
+            ],
+            "payer_totals": payer_totals,
+            "daily": daily,
+        },
+        "transactions": [_serialize_transaction(transaction) for transaction in filtered],
+    }
 
 
 @router.get("/dashboard", response_model=dict)

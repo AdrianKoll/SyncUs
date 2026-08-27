@@ -55,7 +55,7 @@ async function carregarView() {
 
         app.innerHTML = html;
         marcarMenuAtivo(view);
-        executarScriptsDentroDaView(app);
+        await executarScriptsDentroDaView(app);
 
     } catch (err) {
         if (err.name === 'AbortError' || idCarregamento !== carregamentoViewAtual) return;
@@ -91,14 +91,31 @@ function marcarMenuAtivo(viewAtiva) {
 }
 
 // Executa <script> que estiverem dentro da view
-function executarScriptsDentroDaView(container) {
+async function executarScriptsDentroDaView(container) {
     document.querySelectorAll('script[data-syncus-view-script]').forEach(script => script.remove());
+    const carregamentos = [];
+
     container.querySelectorAll('script').forEach(antigo => {
         const novo = document.createElement('script');
         novo.dataset.syncusViewScript = 'true';
+        for (const atributo of antigo.attributes) {
+            novo.setAttribute(atributo.name, atributo.value);
+        }
         novo.textContent = antigo.textContent;
+
+        if (novo.src || novo.type === 'module') {
+            carregamentos.push(new Promise((resolve, reject) => {
+                novo.addEventListener('load', resolve, { once: true });
+                novo.addEventListener('error', () => reject(new Error(`Não foi possível carregar ${novo.src || 'o módulo da view'}`)), { once: true });
+            }));
+        } else {
+            carregamentos.push(Promise.resolve());
+        }
+
         document.body.appendChild(novo);
         antigo.remove();
     });
+
+    await Promise.all(carregamentos);
     document.dispatchEvent(new Event('viewCarregada'));
 }

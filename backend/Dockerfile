@@ -17,8 +17,9 @@ RUN poetry config virtualenvs.create false
 # Copiar apenas arquivos de dependência primeiro (cache do Docker)
 COPY pyproject.toml poetry.lock* ./
 
-# Instalar SOMENTE as dependências (não builda o projeto)
-RUN poetry install --no-root --no-interaction --no-ansi
+# A imagem de produção instala apenas o grupo principal. O grupo dev
+# continua disponível para desenvolvimento local e CI com `poetry install`.
+RUN poetry install --only main --no-root --no-interaction --no-ansi
 
 # Copiar TODO o código do back-end
 COPY . .

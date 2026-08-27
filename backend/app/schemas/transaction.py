@@ -83,3 +83,47 @@ class DashboardSummary(BaseModel):
     monthly_expenses: Decimal
     monthly_balance: Decimal
     debt_summary: str
+
+
+class ReportPayerTotals(BaseModel):
+    eu: Decimal = Decimal("0.00")
+    parceira: Decimal = Decimal("0.00")
+    ambos: Decimal = Decimal("0.00")
+
+
+class ReportCategory(BaseModel):
+    name: str
+    value: Decimal
+
+
+class ReportAggregates(BaseModel):
+    transaction_count: int
+    categories: list[ReportCategory]
+    payer_totals: ReportPayerTotals
+    daily: dict[str, dict[str, Decimal]]
+
+
+class ReportTransaction(BaseModel):
+    id: int
+    amount: str
+    description: str
+    category_id: Optional[int] = None
+    type: TransactionType
+    date: datetime
+    paid_by: PaidBy
+    split_type: SplitType
+    custom_split_data: Optional[Union[str, dict[str, Any]]] = None
+    room_id: int
+    user_id: int
+    category: Optional[Category] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransactionReport(BaseModel):
+    period: dict[str, int]
+    summary: DashboardSummary
+    aggregates: ReportAggregates
+    transactions: list[ReportTransaction]
+
+    model_config = ConfigDict(from_attributes=True)

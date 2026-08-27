@@ -563,3 +563,67 @@ def test_cors_allows_only_configured_origins(client):
         },
     )
     assert "access-control-allow-origin" not in denied.headers
+
+
+
+def test_report_endpoint_returns_backend_aggregates(client):
+    _register(client, "Report Alice", "report-alice@example.com")
+    bob = _register(client, "Report Bob", "report-bob@example.com")
+    alice_headers = _login(client, "report-alice@example.com")
+    bob_headers = _login(client, "report-bob@example.com")
+
+    invite = client.post(
+        "/api/couple/invite/send",
+        headers=alice_headers,
+        json={"token": bob["connection_token"]},
+    )
+    assert invite.status_code == 201, invite.text
+    notification = client.get(
+        "/api/couple/notifications", headers=bob_headers
+    ).json()[0]
+    accepted = client.post(
+        f"/api/couple/invite/{notification['related_id']}/accept",
+        headers=bob_headers,
+    )
+    assert accepted.status_code == 200, accepted.text
+
+    categories = client.get(
+        "/api/transactions/categories", headers=alice_headers
+    ).json()
+    category_id = categories[0]["id"]
+    for payload in (
+        {
+            "amount": "0.10",
+            "description": "Pequena compra",
+            "category_id": category_id,
+            "type": "saida",
+            "date": "2026-08-27T12:00:00",
+            "paid_by": "eu",
+            "split_type": "50/50",
+        },
+        {
+            "amount": "0.20",
+            "description": "Outra compra",
+            "category_id": category_id,
+            "type": "saida",
+            "date": "2026-08-27T12:00:00",
+            "paid_by": "parceira",
+            "split_type": "100_user2",
+        },
+    ):
+        response = client.post(
+            "/api/transactions/", headers=alice_headers, json=payload
+        )
+        assert response.status_code == 200, response.text
+
+    report = client.get(
+        "/api/transactions/report?year=2026&month=8&payer=ambos",
+        headers=alice_headers,
+    )
+    assert report.status_code == 200, report.text
+    data = report.json()
+    assert data["aggregates"]["transaction_count"] == 2
+    assert data["aggregates"]["daily"]["2026-08-27"]["saida"] == "0.30"
+    assert data["aggregates"]["payer_totals"]["eu"] == "0.10"
+    assert data["aggregates"]["payer_totals"]["parceira"] == "0.20"
+    assert data["transactions"][0]["amount"] == "0.10"
