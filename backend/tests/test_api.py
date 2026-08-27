@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 
 @pytest.fixture
@@ -145,3 +146,64 @@ def test_auth_link_and_financial_crud(client):
     assert delete_all.status_code == 200, delete_all.text
     assert delete_all.json()["deleted"] == 1
     assert client.get("/api/transactions/", headers=alice_headers).json() == []
+
+
+
+def _login_token(client, email):
+    response = client.post(
+        "/api/auth/login",
+        data={"username": email, "password": "Senha123!"},
+    )
+    assert response.status_code == 200, response.text
+    return response.json()["access_token"]
+
+
+def test_websocket_rejects_missing_or_invalid_token(client):
+    with pytest.raises(WebSocketDisconnect) as missing_token:
+        with client.websocket_connect("/ws/"):
+            pass
+    assert missing_token.value.code == 1008
+
+    with pytest.raises(WebSocketDisconnect) as invalid_token:
+        with client.websocket_connect("/ws/?token=token-invalido"):
+            pass
+    assert invalid_token.value.code == 1008
+
+
+def test_websocket_uses_authenticated_users_real_room(client):
+    alice = _register(client, "Alice WS", "alice-ws@example.com")
+    bob = _register(client, "Bob WS", "bob-ws@example.com")
+    alice_token = _login_token(client, "alice-ws@example.com")
+    bob_token = _login_token(client, "bob-ws@example.com")
+    alice_headers = {"Authorization": f"Bearer {alice_token}"}
+    bob_headers = {"Authorization": f"Bearer {bob_token}"}
+
+    invite = client.post(
+        "/api/couple/invite/send",
+        headers=alice_headers,
+        json={"token": bob["connection_token"]},
+    )
+    assert invite.status_code == 201, invite.text
+
+    notifications = client.get("/api/couple/notifications", headers=bob_headers)
+    assert notifications.status_code == 200
+    invite_id = notifications.json()[0]["related_id"]
+
+    accepted = client.post(
+        f"/api/couple/invite/{invite_id}/accept", headers=bob_headers
+    )
+    assert accepted.status_code == 200, accepted.text
+
+    alice_me = client.get("/api/users/me", headers=alice_headers).json()
+    bob_me = client.get("/api/users/me", headers=bob_headers).json()
+    assert alice_me["room_id"] == bob_me["room_id"]
+
+    with client.websocket_connect(f"/ws/?token={alice_token}") as alice_socket:
+        with client.websocket_connect(f"/ws/?token={bob_token}") as bob_socket:
+            alice_socket.send_json({"type": "transaction.updated", "room_id": 999999})
+            event = bob_socket.receive_json()
+
+    assert event["type"] == "transaction.updated"
+    assert event["room_id"] == alice_me["room_id"]
+    assert event["room_id"] != 999999
+    assert event["user_id"] == alice["id"]

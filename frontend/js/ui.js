@@ -5,7 +5,7 @@
 let instanciaChartRosca = null;
 let instanciaChartLinha = null;
 let socket = null;
-let socketUserId = null;
+let socketConnectionKey = null;
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -56,12 +56,12 @@ function setupNotifications() {
 
 
 async function carregarPerfilUsuario() {
-    if (!localStorage.getItem('token')) return;
+    if (!getStoredToken()) return;
 
     try {
         const dados = await apiRequest('/users/me');
         localStorage.setItem('user', JSON.stringify(dados));
-        conectarWebSocket(dados.id);
+        conectarWebSocket();
 
         document.querySelectorAll('#userNome, #perfilNome, #gavetaNome').forEach(element => {
             element.textContent = dados.name;
@@ -80,7 +80,7 @@ async function carregarPerfilUsuario() {
 
 
 async function carregarNotificacoes() {
-    if (!localStorage.getItem('token')) return;
+    if (!getStoredToken()) return;
 
     try {
         const notificacoes = await apiRequest('/couple/notifications');
@@ -138,29 +138,35 @@ window.responderConvite = async function (inviteId, action) {
 };
 
 
-function conectarWebSocket(userId) {
-    if (!userId || (socket && socketUserId === userId)) return;
-    if (socket) socket.close();
+function conectarWebSocket() {
+    const token = getStoredToken();
+    if (!token) return;
 
-    socketUserId = userId;
+    if (socket && socketConnectionKey === token) return;
+    if (socket) {
+        socket.onclose = null;
+        socket.close();
+    }
+
+    socketConnectionKey = token;
     const urlBase = API_URL.replace(/\/api\/?$/, '');
     const wsBase = urlBase.replace(/^http/, 'ws');
-    const wsUrl = `${wsBase}/ws/${encodeURIComponent(userId)}`;
+    const wsUrl = `${wsBase}/ws/?token=${encodeURIComponent(token)}`;
+    const currentSocket = new WebSocket(wsUrl);
+    socket = currentSocket;
 
-    try {
-        socket = new WebSocket(wsUrl);
-        socket.onopen = () => console.log('WebSocket conectado.');
-        socket.onmessage = () => carregarNotificacoes();
-        socket.onclose = () => {
-            socket = null;
-            if (localStorage.getItem('token')) {
-                setTimeout(() => conectarWebSocket(userId), 5000);
-            }
-        };
-        socket.onerror = error => console.warn('WebSocket indisponível:', error);
-    } catch (error) {
-        console.warn('Falha ao iniciar WebSocket:', error);
-    }
+    currentSocket.onopen = () => console.log('WebSocket conectado à sala autenticada.');
+    currentSocket.onmessage = () => carregarNotificacoes();
+    currentSocket.onclose = event => {
+        if (socket !== currentSocket) return;
+
+        socket = null;
+        socketConnectionKey = null;
+        if (event.code !== 1008 && getStoredToken() === token) {
+            setTimeout(() => conectarWebSocket(), 5000);
+        }
+    };
+    currentSocket.onerror = error => console.warn('WebSocket indisponível:', error);
 }
 
 
