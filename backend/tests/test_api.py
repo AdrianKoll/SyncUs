@@ -1,17 +1,35 @@
-import os
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from starlette.websockets import WebSocketDisconnect
 
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     database_path = Path(tmp_path) / "syncus-test.db"
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
-    monkeypatch.setenv("SECRET_KEY", "test-secret")
+    database_url = f"sqlite:///{database_path}"
+    test_secret = "test-secret-for-syncus-tests-32-chars"
+    test_origins = "http://localhost:8080,http://127.0.0.1:8080"
+    monkeypatch.setenv("DATABASE_URL", database_url)
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    monkeypatch.setenv("SECRET_KEY", test_secret)
+    monkeypatch.setenv("CORS_ORIGINS", test_origins)
     monkeypatch.setenv("ALGORITHM", "HS256")
+
+    # A fixture também atualiza o singleton caso outro módulo de teste tenha
+    # importado `config` durante a coleta dos testes.
+    from app.core import config
+
+    config.settings.DATABASE_URL = database_url
+    config.settings.ENVIRONMENT = "test"
+    config.settings.SECRET_KEY = test_secret
+    config.settings.CORS_ORIGINS = test_origins
+    config.settings.ALGORITHM = "HS256"
 
     # O app é importado após as variáveis para que a sessão use o banco temporário.
     from app.main import app
@@ -38,7 +56,7 @@ def _login(client, email):
 
 
 def test_auth_link_and_financial_crud(client):
-    alice = _register(client, "Alice", "alice@example.com")
+    _register(client, "Alice", "alice@example.com")
     bob = _register(client, "Bob", "bob@example.com")
     alice_headers = _login(client, "alice@example.com")
     bob_headers = _login(client, "bob@example.com")
@@ -207,3 +225,284 @@ def test_websocket_uses_authenticated_users_real_room(client):
     assert event["room_id"] == alice_me["room_id"]
     assert event["room_id"] != 999999
     assert event["user_id"] == alice["id"]
+
+
+
+def test_active_connection_is_unique_per_user_and_conflicts_are_rejected(client):
+    _register(client, "Alice occupied", "alice-occupied@example.com")
+    bob = _register(client, "Bob occupied", "bob-occupied@example.com")
+    carol = _register(client, "Carol occupied", "carol-occupied@example.com")
+    alice_headers = _login(client, "alice-occupied@example.com")
+    bob_headers = _login(client, "bob-occupied@example.com")
+    carol_headers = _login(client, "carol-occupied@example.com")
+
+    first_invite = client.post(
+        "/api/couple/invite/send",
+        headers=alice_headers,
+        json={"token": bob["connection_token"]},
+    )
+    assert first_invite.status_code == 201, first_invite.text
+    bob_notifications = client.get(
+        "/api/couple/notifications", headers=bob_headers
+    ).json()
+    first_invite_id = bob_notifications[0]["related_id"]
+    accepted = client.post(
+        f"/api/couple/invite/{first_invite_id}/accept", headers=bob_headers
+    )
+    assert accepted.status_code == 200, accepted.text
+
+    occupied_recipient = client.post(
+        "/api/couple/invite/send",
+        headers=carol_headers,
+        json={"token": bob["connection_token"]},
+    )
+    assert occupied_recipient.status_code == 409
+    assert "vínculo ativo" in occupied_recipient.json()["detail"]
+
+    occupied_sender = client.post(
+        "/api/couple/invite/send",
+        headers=alice_headers,
+        json={"token": carol["connection_token"]},
+    )
+    assert occupied_sender.status_code == 409
+    assert "vínculo ativo" in occupied_sender.json()["detail"]
+
+    disconnected = client.post("/api/couple/disconnect", headers=alice_headers)
+    assert disconnected.status_code == 200, disconnected.text
+
+    refreshed_alice = client.post(
+        "/api/users/token/refresh", headers=alice_headers
+    )
+    assert refreshed_alice.status_code == 200, refreshed_alice.text
+
+    reconnect = client.post(
+        "/api/couple/invite/send",
+        headers=carol_headers,
+        json={"token": refreshed_alice.json()["connection_token"]},
+    )
+    assert reconnect.status_code == 201, reconnect.text
+
+
+def test_database_rejects_two_active_connections_for_one_user():
+    from app.core.database import Base
+    from app.models.models import CoupleConnection, User
+
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    session = sessionmaker(bind=engine)()
+    try:
+        alice = User(
+            name="Alice DB",
+            email="alice-db@example.com",
+            hashed_password="hash",
+        )
+        bob = User(
+            name="Bob DB",
+            email="bob-db@example.com",
+            hashed_password="hash",
+        )
+        carol = User(
+            name="Carol DB",
+            email="carol-db@example.com",
+            hashed_password="hash",
+        )
+        session.add_all([alice, bob, carol])
+        session.commit()
+
+        session.add(
+            CoupleConnection(
+                user1_id=alice.id,
+                user2_id=bob.id,
+                is_active=True,
+            )
+        )
+        session.commit()
+
+        session.add(
+            CoupleConnection(
+                user1_id=alice.id,
+                user2_id=carol.id,
+                is_active=True,
+            )
+        )
+        with pytest.raises(IntegrityError):
+            session.commit()
+        session.rollback()
+
+        session.add(
+            CoupleConnection(
+                user1_id=alice.id,
+                user2_id=carol.id,
+                is_active=False,
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+        engine.dispose()
+
+
+
+def test_database_rejects_user_active_in_both_connection_positions():
+    from app.core.database import Base
+    from app.models.models import CoupleConnection, CoupleConnectionMember, User
+
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    session = sessionmaker(bind=engine)()
+    try:
+        users = [
+            User(name="User 1", email="position-1@example.com", hashed_password="hash"),
+            User(name="User 2", email="position-2@example.com", hashed_password="hash"),
+            User(name="User 3", email="position-3@example.com", hashed_password="hash"),
+        ]
+        session.add_all(users)
+        session.commit()
+
+        first_connection = CoupleConnection(
+            user1_id=users[0].id,
+            user2_id=users[1].id,
+            is_active=True,
+        )
+        second_connection = CoupleConnection(
+            user1_id=users[1].id,
+            user2_id=users[2].id,
+            is_active=True,
+        )
+        session.add_all([first_connection, second_connection])
+        session.flush()
+        session.add_all(
+            [
+                CoupleConnectionMember(
+                    connection_id=first_connection.id,
+                    user_id=users[0].id,
+                    is_active=True,
+                ),
+                CoupleConnectionMember(
+                    connection_id=first_connection.id,
+                    user_id=users[1].id,
+                    is_active=True,
+                ),
+                CoupleConnectionMember(
+                    connection_id=second_connection.id,
+                    user_id=users[1].id,
+                    is_active=True,
+                ),
+                CoupleConnectionMember(
+                    connection_id=second_connection.id,
+                    user_id=users[2].id,
+                    is_active=True,
+                ),
+            ]
+        )
+        with pytest.raises(IntegrityError):
+            session.commit()
+    finally:
+        session.close()
+        engine.dispose()
+
+
+
+def test_service_rejects_room_with_more_than_two_users():
+    from app.core.database import Base
+    from app.models.models import Room, User
+    from app.services.room_service import ensure_room_for_users
+
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    session = sessionmaker(bind=engine)()
+    try:
+        room = Room()
+        users = [
+            User(name="Room User 1", email="room-1@example.com", hashed_password="hash"),
+            User(name="Room User 2", email="room-2@example.com", hashed_password="hash"),
+            User(name="Room User 3", email="room-3@example.com", hashed_password="hash"),
+        ]
+        session.add(room)
+        session.flush()
+        for user in users:
+            user.room_id = room.id
+        session.add_all(users)
+        session.commit()
+
+        with pytest.raises(ValueError, match="outros usuários"):
+            ensure_room_for_users(session, users[0], users[2])
+    finally:
+        session.close()
+        engine.dispose()
+
+
+
+def test_startup_backfill_populates_connection_members_once():
+    from app.core.database import Base
+    from app.models.models import CoupleConnection, CoupleConnectionMember, User
+    from app.services.room_service import ensure_active_connection_members
+
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    session = sessionmaker(bind=engine)()
+    try:
+        users = [
+            User(name="Legacy 1", email="legacy-1@example.com", hashed_password="hash"),
+            User(name="Legacy 2", email="legacy-2@example.com", hashed_password="hash"),
+        ]
+        session.add_all(users)
+        session.commit()
+        connection = CoupleConnection(
+            user1_id=users[0].id,
+            user2_id=users[1].id,
+            is_active=True,
+        )
+        session.add(connection)
+        session.commit()
+
+        ensure_active_connection_members(session)
+        ensure_active_connection_members(session)
+
+        members = session.query(CoupleConnectionMember).all()
+        assert len(members) == 2
+        assert {member.user_id for member in members} == {users[0].id, users[1].id}
+        assert all(member.is_active for member in members)
+    finally:
+        session.close()
+        engine.dispose()
+
+
+
+def test_cors_allows_only_configured_origins(client):
+    allowed_origin = "http://localhost:8080"
+    allowed = client.options(
+        "/",
+        headers={
+            "Origin": allowed_origin,
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert allowed.status_code == 200
+    assert allowed.headers["access-control-allow-origin"] == allowed_origin
+    assert allowed.headers["access-control-allow-credentials"] == "true"
+
+    denied = client.options(
+        "/",
+        headers={
+            "Origin": "https://evil.example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert "access-control-allow-origin" not in denied.headers

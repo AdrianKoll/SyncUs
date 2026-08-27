@@ -20,6 +20,21 @@ Crie o arquivo de ambiente a partir do modelo e preencha os valores reais:
 
 ```bash
 cp .env.example .env
+```
+
+Em desenvolvimento, o projeto usa apenas `http://localhost:8080` e `http://127.0.0.1:8080` como origens CORS e gera uma `SECRET_KEY` efêmera se ela estiver vazia. Para staging ou produção, defina obrigatoriamente:
+
+```dotenv
+ENVIRONMENT=production
+SECRET_KEY=<uma-chave-aleatória-com-pelo-menos-32-caracteres>
+CORS_ORIGINS=https://app.exemplo.com,https://admin.exemplo.com
+```
+
+A aplicação falha durante a inicialização se a chave estiver ausente, for um placeholder, tiver menos de 32 caracteres ou se `CORS_ORIGINS` estiver vazio ou contiver `*`. As origens devem ser explícitas e separadas por vírgula.
+
+Depois, inicialize os serviços:
+
+```bash
 docker compose up --build -d
 ```
 
