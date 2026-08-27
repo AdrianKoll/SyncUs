@@ -124,11 +124,29 @@ function logout() {
 // =========================
 // UTILITÁRIOS DE FORMATAÇÃO
 // =========================
+function dinheiroParaCentavos(valor) {
+    if (valor === null || valor === undefined || valor === '') return null;
+    const texto = String(valor).trim().replace(',', '.');
+    const match = texto.match(/^(-?)(\d+)(?:\.(\d{1,2}))?$/);
+    if (!match) return null;
+
+    const sinal = match[1] === '-' ? -1 : 1;
+    const reais = Number(match[2]);
+    const centavos = Number((match[3] || '').padEnd(2, '0'));
+    if (!Number.isSafeInteger(reais) || !Number.isSafeInteger(centavos)) return null;
+    return sinal * (reais * 100 + centavos);
+}
+
+function centavosParaNumero(centavos) {
+    return Number(centavos || 0) / 100;
+}
+
 function formatCurrency(valor) {
+    const centavos = dinheiroParaCentavos(valor);
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL'
-    }).format(Number(valor) || 0);
+    }).format(centavosParaNumero(centavos === null ? 0 : centavos));
 }
 
 function formatDate(data) {
@@ -179,10 +197,18 @@ function transacaoPertenceAoPagador(transacao, pagador) {
     return transacao?.paid_by === pagador;
 }
 
-function valorDaTransacaoParaPagador(transacao, pagador = 'ambos') {
+function valorDaTransacaoParaPagadorEmCentavos(transacao, pagador = 'ambos') {
     const rateio = interpretarRateioTransacao(transacao);
-    if (rateio && pagador !== 'ambos') return rateio[pagador] || 0;
-    return Number(transacao?.amount || 0);
+    if (rateio && pagador !== 'ambos') {
+        return dinheiroParaCentavos(rateio[pagador]) || 0;
+    }
+    return dinheiroParaCentavos(transacao?.amount) || 0;
+}
+
+function valorDaTransacaoParaPagador(transacao, pagador = 'ambos') {
+    return centavosParaNumero(
+        valorDaTransacaoParaPagadorEmCentavos(transacao, pagador)
+    );
 }
 
 function iniciaisDoNome(nome) {

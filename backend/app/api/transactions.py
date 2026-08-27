@@ -1,7 +1,8 @@
 import calendar
 import json
 from datetime import datetime, timezone
-from typing import List, Optional
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_
@@ -9,7 +10,8 @@ from sqlalchemy.orm import Session
 
 from ..core.database import get_db
 from ..core.deps import get_current_user
-from ..models.models import Category, Room, Transaction, User
+from ..models.enums import PaidBy, SplitType, TransactionType
+from ..models.models import Category, Transaction, User
 from ..schemas.transaction import (
     Category as CategorySchema,
     CategoryCreate,
@@ -54,7 +56,7 @@ def _apply_transaction_filters(
     room_id: int,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    transaction_type: Optional[str] = None,
+    transaction_type: Optional[TransactionType] = None,
     category_id: Optional[int] = None,
 ):
     query = query.filter(Transaction.room_id == room_id)
@@ -86,54 +88,100 @@ def _period_bounds(year: Optional[int], month: Optional[int]):
     return selected_year, selected_month, start, end
 
 
-def _normalize_custom_split_data(amount: float, split_type: str, raw_data: Optional[str]):
-    if split_type != "custom":
+MONEY_QUANTUM = Decimal("0.01")
+ZERO = Decimal("0.00")
+
+
+def _as_money(value: Any, field_name: str) -> Decimal:
+    try:
+        amount = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=f"{field_name} inválido") from exc
+
+    if not amount.is_finite():
+        raise HTTPException(status_code=400, detail=f"{field_name} inválido")
+    quantized = amount.quantize(MONEY_QUANTUM, rounding=ROUND_HALF_UP)
+    if quantized != amount:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{field_name} deve possuir no máximo duas casas decimais",
+        )
+    return quantized
+
+
+def _half_split(amount: Decimal) -> tuple[Decimal, Decimal]:
+    first = (amount / 2).quantize(MONEY_QUANTUM, rounding=ROUND_HALF_UP)
+    return first, amount - first
+
+
+def _normalize_custom_split_data(
+    amount: Decimal,
+    split_type: SplitType | str,
+    raw_data: Optional[str | dict[str, Any]],
+):
+    split_value = getattr(split_type, "value", split_type)
+    if split_value != SplitType.CUSTOM.value:
         return None
     if not raw_data:
         raise HTTPException(
             status_code=400,
             detail="Informe quanto cada pessoa pagou na divisão personalizada",
         )
+
     try:
         data = json.loads(raw_data) if isinstance(raw_data, str) else raw_data
-        eu = float(data.get("eu", data.get("user1", data.get("current_user", 0))))
-        parceira = float(data.get("parceira", data.get("partner", data.get("user2", 0))))
-    except (TypeError, ValueError, json.JSONDecodeError):
-        raise HTTPException(status_code=400, detail="Valores da divisão personalizada inválidos")
+        if not isinstance(data, dict):
+            raise ValueError("rateio deve ser um objeto")
+        eu = _as_money(
+            data.get("eu", data.get("user1", data.get("current_user", ZERO))),
+            "Valor de eu",
+        )
+        parceira = _as_money(
+            data.get("parceira", data.get("partner", data.get("user2", ZERO))),
+            "Valor da parceira",
+        )
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Valores da divisão personalizada inválidos",
+        ) from exc
 
-    if eu < 0 or parceira < 0 or abs((eu + parceira) - float(amount)) > 0.01:
+    if eu < ZERO or parceira < ZERO or eu + parceira != _as_money(amount, "Valor"):
         raise HTTPException(
             status_code=400,
             detail="A soma dos valores personalizados deve ser igual ao valor do lançamento",
         )
-    return json.dumps({"eu": round(eu, 2), "parceira": round(parceira, 2)})
+    return json.dumps({"eu": f"{eu:.2f}", "parceira": f"{parceira:.2f}"})
 
 
 def _payment_values(transaction: Transaction):
-    amount = float(transaction.amount)
-    if transaction.split_type == "custom" and transaction.custom_split_data:
+    amount = _as_money(transaction.amount, "Valor")
+    split_type = getattr(transaction.split_type, "value", transaction.split_type)
+    paid_by = getattr(transaction.paid_by, "value", transaction.paid_by)
+    if split_type == SplitType.CUSTOM.value and transaction.custom_split_data:
         try:
             data = json.loads(transaction.custom_split_data)
             return (
-                float(data.get("eu", data.get("user1", 0))),
-                float(data.get("parceira", data.get("user2", 0))),
+                _as_money(data.get("eu", data.get("user1", ZERO)), "Rateio de eu"),
+                _as_money(data.get("parceira", data.get("user2", ZERO)), "Rateio da parceira"),
             )
-        except (TypeError, ValueError, json.JSONDecodeError):
+        except (TypeError, ValueError, json.JSONDecodeError, HTTPException):
             pass
-    if transaction.paid_by in ("parceira", "partner", "user2"):
-        return 0.0, amount
-    if transaction.paid_by == "ambos":
-        return amount / 2, amount / 2
-    return amount, 0.0
+    if paid_by == PaidBy.PARCEIRA.value:
+        return ZERO, amount
+    if paid_by == PaidBy.AMBOS.value:
+        return _half_split(amount)
+    return amount, ZERO
 
 
 def _responsibility_values(transaction: Transaction):
-    amount = float(transaction.amount)
-    if transaction.split_type in ("100_user1", "100_eu"):
-        return amount, 0.0
-    if transaction.split_type in ("100_user2", "100_parceira"):
-        return 0.0, amount
-    return amount / 2, amount / 2
+    amount = _as_money(transaction.amount, "Valor")
+    split_type = getattr(transaction.split_type, "value", transaction.split_type)
+    if split_type == SplitType.FULL_USER1.value:
+        return amount, ZERO
+    if split_type == SplitType.FULL_USER2.value:
+        return ZERO, amount
+    return _half_split(amount)
 
 
 def _serialize_transaction(transaction: Transaction):
@@ -248,7 +296,7 @@ def get_transactions(
     limit: int = Query(default=100, ge=1, le=500),
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    type: Optional[str] = None,
+    type: Optional[TransactionType] = None,
     category_id: Optional[int] = None,
 ):
     if not current_user.room_id:
@@ -393,7 +441,7 @@ def get_dashboard(
     ).limit(5).all()
 
     period_transactions = period_query.all()
-    couple_balance = 0.0
+    couple_balance = ZERO
     for transaction in period_transactions:
         if transaction.type != "saida":
             continue
@@ -402,14 +450,14 @@ def get_dashboard(
         couple_balance += paid_eu - responsibility_eu
 
     days_in_month = calendar.monthrange(selected_year, selected_month)[1]
-    chart_income = [0.0] * days_in_month
-    chart_expenses = [0.0] * days_in_month
+    chart_income = [ZERO] * days_in_month
+    chart_expenses = [ZERO] * days_in_month
     for transaction in period_transactions:
         index = transaction.date.day - 1
         if transaction.type == "entrada":
-            chart_income[index] += float(transaction.amount)
+            chart_income[index] += _as_money(transaction.amount, "Valor")
         elif transaction.type == "saida":
-            chart_expenses[index] += float(transaction.amount)
+            chart_expenses[index] += _as_money(transaction.amount, "Valor")
 
     return {
         "period": {"year": selected_year, "month": selected_month},
@@ -421,18 +469,19 @@ def get_dashboard(
             "debt_summary": "Tudo em dia" if couple_balance == 0 else "Ajuste pendente",
         },
         "couple_balance": {
-            "amount": abs(couple_balance),
+            "amount": float(abs(couple_balance)),
             "direction": "partner_owes_current" if couple_balance > 0 else "current_owes_partner" if couple_balance < 0 else "settled",
         },
         "categories": [
-            {"name": name, "value": float(total or 0)}
+                {"name": name, "value": float(total or ZERO)}
+
             for name, total in categories_data
         ],
         "recent": [
             {
                 "id": transaction.id,
                 "description": transaction.description,
-                "amount": float(transaction.amount),
+                "amount": float(_as_money(transaction.amount, "Valor")),
                 "type": transaction.type,
                 "date": transaction.date.strftime("%d/%m/%Y"),
                 "category": transaction.category.name if transaction.category else "Outros",
@@ -443,7 +492,7 @@ def get_dashboard(
             "labels": [
                 f"{day:02d}/{selected_month:02d}" for day in range(1, days_in_month + 1)
             ],
-            "income": chart_income,
-            "expenses": chart_expenses,
+            "income": [float(value) for value in chart_income],
+            "expenses": [float(value) for value in chart_expenses],
         },
     }

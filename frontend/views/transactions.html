@@ -104,7 +104,7 @@ async function salvarTransacao(event) {
     event.preventDefault();
     const payload = {
         description: document.getElementById('descricaoLancamento').value.trim(),
-        amount: Number(document.getElementById('valorLancamento').value),
+        amount: document.getElementById('valorLancamento').value,
         type: document.getElementById('tipoLancamento').value,
         date: toApiDate(document.getElementById('dataLancamento').value),
         paid_by: document.getElementById('pagoPorLancamento').value,
@@ -176,18 +176,21 @@ window.excluirTransacao = async function (id) {
 // Nome específico para evitar colisão com a helper global de app.js usada por Histórico e Relatórios.
 function obterRateioFormulario() {
     if (document.getElementById('divisaoLancamento').value !== 'custom') return null;
-    const amount = Number(document.getElementById('valorLancamento').value);
-    const eu = Number(document.getElementById('valorPagoEu').value);
-    const parceira = Number(document.getElementById('valorPagoParceira').value);
-    if (!Number.isFinite(amount) || !Number.isFinite(eu) || !Number.isFinite(parceira) || eu < 0 || parceira < 0) {
+    const amountCents = dinheiroParaCentavos(document.getElementById('valorLancamento').value);
+    const euCents = dinheiroParaCentavos(document.getElementById('valorPagoEu').value);
+    const parceiraCents = dinheiroParaCentavos(document.getElementById('valorPagoParceira').value);
+    if (amountCents === null || euCents === null || parceiraCents === null || euCents < 0 || parceiraCents < 0) {
         showToast('Informe valores válidos para a divisão personalizada.', 'warning');
         return null;
     }
-    if (Math.abs((eu + parceira) - amount) > 0.01) {
+    if (euCents + parceiraCents !== amountCents) {
         showToast('A soma do que cada pessoa pagou deve ser igual ao valor total.', 'warning');
         return null;
     }
-    return JSON.stringify({ eu: Number(eu.toFixed(2)), parceira: Number(parceira.toFixed(2)) });
+    return JSON.stringify({
+        eu: centavosParaNumero(euCents).toFixed(2),
+        parceira: centavosParaNumero(parceiraCents).toFixed(2)
+    });
 }
 
 function preencherRateioPersonalizado(rawData) {
@@ -207,9 +210,10 @@ function atualizarCamposRateio() {
     const container = document.getElementById('rateioPersonalizado');
     if (container) container.hidden = !personalizado;
     if (personalizado && !document.getElementById('valorPagoEu').value && !document.getElementById('valorPagoParceira').value) {
-        const amount = Number(document.getElementById('valorLancamento').value) || 0;
-        document.getElementById('valorPagoEu').value = (amount / 2).toFixed(2);
-        document.getElementById('valorPagoParceira').value = (amount / 2).toFixed(2);
+        const amountCents = dinheiroParaCentavos(document.getElementById('valorLancamento').value) || 0;
+        const euCents = Math.round(amountCents / 2);
+        document.getElementById('valorPagoEu').value = centavosParaNumero(euCents).toFixed(2);
+        document.getElementById('valorPagoParceira').value = centavosParaNumero(amountCents - euCents).toFixed(2);
     }
     atualizarResumoRateio();
 }
@@ -217,13 +221,13 @@ function atualizarCamposRateio() {
 function atualizarResumoRateio() {
     const resumo = document.getElementById('resumoRateio');
     if (!resumo) return;
-    const amount = Number(document.getElementById('valorLancamento').value) || 0;
-    const eu = Number(document.getElementById('valorPagoEu').value) || 0;
-    const parceira = Number(document.getElementById('valorPagoParceira').value) || 0;
-    const diferenca = amount - eu - parceira;
-    resumo.textContent = `Total: ${formatCurrency(eu + parceira)} / ${formatCurrency(amount)}${Math.abs(diferenca) < 0.01 ? ' ✓' : ` · Falta ${formatCurrency(Math.abs(diferenca))}`}`;
-    resumo.classList.toggle('text-success', Math.abs(diferenca) < 0.01);
-    resumo.classList.toggle('text-danger', Math.abs(diferenca) >= 0.01);
+    const amountCents = dinheiroParaCentavos(document.getElementById('valorLancamento').value) || 0;
+    const euCents = dinheiroParaCentavos(document.getElementById('valorPagoEu').value) || 0;
+    const parceiraCents = dinheiroParaCentavos(document.getElementById('valorPagoParceira').value) || 0;
+    const diferencaCents = amountCents - euCents - parceiraCents;
+    resumo.textContent = `Total: ${formatCurrency(centavosParaNumero(euCents + parceiraCents))} / ${formatCurrency(centavosParaNumero(amountCents))}${diferencaCents === 0 ? ' ✓' : ` · Falta ${formatCurrency(centavosParaNumero(Math.abs(diferencaCents)))}`}`;
+    resumo.classList.toggle('text-success', diferencaCents === 0);
+    resumo.classList.toggle('text-danger', diferencaCents !== 0);
 }
 
 function limparFormularioTransacao() {

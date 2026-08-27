@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -146,7 +147,7 @@ def test_auth_link_and_financial_crud(client):
         "/api/transactions/", headers=alice_headers, json=custom_payload
     )
     assert custom.status_code == 200, custom.text
-    assert custom.json()["custom_split_data"] == '{"eu": 700.0, "parceira": 300.0}'
+    assert custom.json()["custom_split_data"] == '{"eu": "700.00", "parceira": "300.00"}'
 
     custom_dashboard = client.get(
         "/api/transactions/dashboard?year=2026&month=8", headers=bob_headers
@@ -174,6 +175,34 @@ def _login_token(client, email):
     )
     assert response.status_code == 200, response.text
     return response.json()["access_token"]
+
+
+def test_websocket_manager_removes_dead_connections():
+    from app.websockets.sync import ConnectionManager
+
+    class HealthySocket:
+        def __init__(self):
+            self.messages = []
+
+        async def send_json(self, message):
+            self.messages.append(message)
+
+    class DeadSocket:
+        async def send_json(self, message):
+            raise RuntimeError("socket encerrado")
+
+    async def scenario():
+        manager = ConnectionManager()
+        healthy = HealthySocket()
+        dead = DeadSocket()
+        manager.active_connections[42] = [healthy, dead]
+
+        await manager.broadcast({"type": "updated"}, 42)
+
+        assert healthy.messages == [{"type": "updated"}]
+        assert manager.active_connections[42] == [healthy]
+
+    asyncio.run(scenario())
 
 
 def test_websocket_rejects_missing_or_invalid_token(client):
@@ -216,7 +245,9 @@ def test_websocket_uses_authenticated_users_real_room(client):
     bob_me = client.get("/api/users/me", headers=bob_headers).json()
     assert alice_me["room_id"] == bob_me["room_id"]
 
-    with client.websocket_connect(f"/ws/?token={alice_token}") as alice_socket:
+    with client.websocket_connect(
+        "/ws/", headers={"Authorization": f"Bearer {alice_token}"}
+    ) as alice_socket:
         with client.websocket_connect(f"/ws/?token={bob_token}") as bob_socket:
             alice_socket.send_json({"type": "transaction.updated", "room_id": 999999})
             event = bob_socket.receive_json()
@@ -225,6 +256,32 @@ def test_websocket_uses_authenticated_users_real_room(client):
     assert event["room_id"] == alice_me["room_id"]
     assert event["room_id"] != 999999
     assert event["user_id"] == alice["id"]
+
+
+
+def test_websocket_rejects_stale_room_without_active_connection(client):
+    _register(client, "Stale room", "stale-room@example.com")
+    token = _login_token(client, "stale-room@example.com")
+
+    from app.core.database import SessionLocal
+    from app.models.models import Room, User
+
+    db = SessionLocal()
+    try:
+        room = Room()
+        db.add(room)
+        db.flush()
+        db.query(User).filter(User.email == "stale-room@example.com").update(
+            {User.room_id: room.id}, synchronize_session=False
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    with pytest.raises(WebSocketDisconnect) as stale_room:
+        with client.websocket_connect(f"/ws/?token={token}"):
+            pass
+    assert stale_room.value.code == 1008
 
 
 

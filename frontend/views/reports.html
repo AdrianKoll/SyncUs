@@ -67,17 +67,18 @@ function renderizarRelatorio() {
     const porPagador = { eu: 0, parceira: 0, ambos: 0 };
     gastos.forEach(item => {
         const name = item.category?.name || 'Outros';
-        porCategoria[name] = (porCategoria[name] || 0) + valorDaTransacaoParaPagador(item, quem);
+        porCategoria[name] = (porCategoria[name] || 0) + valorDaTransacaoParaPagadorEmCentavos(item, quem);
         const rateio = interpretarRateioTransacao(item);
         if (rateio) {
             if (quem === 'ambos') {
-                porPagador.eu += rateio.eu;
-                porPagador.parceira += rateio.parceira;
+                porPagador.eu += dinheiroParaCentavos(rateio.eu) || 0;
+                porPagador.parceira += dinheiroParaCentavos(rateio.parceira) || 0;
             } else {
-                porPagador[quem] += rateio[quem] || 0;
+                porPagador[quem] += dinheiroParaCentavos(rateio[quem]) || 0;
             }
         } else {
-            porPagador[item.paid_by] = (porPagador[item.paid_by] || 0) + Number(item.amount || 0);
+            const paidBy = item.paid_by || 'ambos';
+            porPagador[paidBy] = (porPagador[paidBy] || 0) + (dinheiroParaCentavos(item.amount) || 0);
         }
     });
 
@@ -88,15 +89,15 @@ function renderizarRelatorio() {
         const grafMesElement = document.getElementById('grafMesRel');
         const grafQuemElement = document.getElementById('grafQuemRel');
         if (![grafCatElement, grafMesElement, grafQuemElement].every(Boolean)) return;
-        relatorioCharts.push(new Chart(grafCatElement, { type: 'doughnut', data: { labels: Object.keys(porCategoria), datasets: [{ data: Object.values(porCategoria), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#6B7280', '#EC4899'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } }));
+        relatorioCharts.push(new Chart(grafCatElement, { type: 'doughnut', data: { labels: Object.keys(porCategoria), datasets: [{ data: Object.values(porCategoria).map(centavosParaNumero), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#6B7280', '#EC4899'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } }));
         const daily = {};
-        filtered.forEach(item => { const day = formatDate(item.date); daily[day] = daily[day] || { entrada: 0, saida: 0 }; daily[day][item.type] = (daily[day][item.type] || 0) + Number(item.amount || 0); });
-        relatorioCharts.push(new Chart(grafMesElement, { type: 'bar', data: { labels: Object.keys(daily), datasets: [{ label: 'Entradas', data: Object.values(daily).map(item => item.entrada), backgroundColor: '#10B981', borderRadius: 6 }, { label: 'Saídas', data: Object.values(daily).map(item => item.saida), backgroundColor: '#EF4444', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } }));
-        relatorioCharts.push(new Chart(grafQuemElement, { type: 'bar', data: { labels: ['Você', 'Parceiro(a)', 'Ambos'], datasets: [{ label: 'Gastos R$', data: [porPagador.eu || 0, porPagador.parceira || 0, porPagador.ambos || 0], backgroundColor: ['#3B82F6', '#EC4899', '#8B5CF6'], borderRadius: 10 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }));
+        filtered.forEach(item => { const day = formatDate(item.date); daily[day] = daily[day] || { entrada: 0, saida: 0 }; daily[day][item.type] = (daily[day][item.type] || 0) + (dinheiroParaCentavos(item.amount) || 0); });
+        relatorioCharts.push(new Chart(grafMesElement, { type: 'bar', data: { labels: Object.keys(daily), datasets: [{ label: 'Entradas', data: Object.values(daily).map(item => centavosParaNumero(item.entrada)), backgroundColor: '#10B981', borderRadius: 6 }, { label: 'Saídas', data: Object.values(daily).map(item => centavosParaNumero(item.saida)), backgroundColor: '#EF4444', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } }));
+        relatorioCharts.push(new Chart(grafQuemElement, { type: 'bar', data: { labels: ['Você', 'Parceiro(a)', 'Ambos'], datasets: [{ label: 'Gastos R$', data: [centavosParaNumero(porPagador.eu), centavosParaNumero(porPagador.parceira), centavosParaNumero(porPagador.ambos)], backgroundColor: ['#3B82F6', '#EC4899', '#8B5CF6'], borderRadius: 10 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }));
     }
 
     const maiorCategoria = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
-    resumoElement.innerHTML = `<li class="py-1 border-bottom"><i class="bi bi-check-circle text-success me-2"></i>Saldo do período: <strong>${formatCurrency(summary.total_balance)}</strong></li><li class="py-1 border-bottom"><i class="bi bi-arrow-up text-danger me-2"></i>Saídas registradas: <strong>${formatCurrency(summary.monthly_expenses)}</strong></li><li class="py-1 border-bottom"><i class="bi bi-folder text-primary me-2"></i>Maior categoria: <strong>${maiorCategoria ? `${escapeHtml(maiorCategoria[0])} (${formatCurrency(maiorCategoria[1])})` : 'Nenhuma'}</strong></li><li class="py-1"><i class="bi bi-list-ul text-info me-2"></i>Total de registros: <strong>${filtered.length}</strong></li>`;
+    resumoElement.innerHTML = `<li class="py-1 border-bottom"><i class="bi bi-check-circle text-success me-2"></i>Saldo do período: <strong>${formatCurrency(summary.total_balance)}</strong></li><li class="py-1 border-bottom"><i class="bi bi-arrow-up text-danger me-2"></i>Saídas registradas: <strong>${formatCurrency(summary.monthly_expenses)}</strong></li><li class="py-1 border-bottom"><i class="bi bi-folder text-primary me-2"></i>Maior categoria: <strong>${maiorCategoria ? `${escapeHtml(maiorCategoria[0])} (${formatCurrency(centavosParaNumero(maiorCategoria[1]))})` : 'Nenhuma'}</strong></li><li class="py-1"><i class="bi bi-list-ul text-info me-2"></i>Total de registros: <strong>${filtered.length}</strong></li>`;
 }
 
 function gerarRelatorio() {

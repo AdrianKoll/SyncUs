@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime, timezone
 from app.core.deps import get_db, get_current_user
 from app.models.models import User, CoupleInvite, CoupleConnection, Notification
-from app.services.room_service import ensure_room_for_users
+from app.services.room_service import (
+    create_couple_connection,
+    deactivate_connection,
+    get_active_connection_for_user,
+)
 from pydantic import BaseModel, ConfigDict
 
 # Schemas locais
@@ -47,7 +51,7 @@ def send_invite(
         raise HTTPException(404, "Token inválido, expirado ou já utilizado")
     if target_user.id == current_user.id:
         raise HTTPException(400, "Não pode se conectar com você mesmo")
-    
+
     # 2. Verifica se já estão conectados
     existing = db.query(CoupleConnection).filter(
         ((CoupleConnection.user1_id == current_user.id) & (CoupleConnection.user2_id == target_user.id)) |
@@ -56,6 +60,11 @@ def send_invite(
     ).first()
     if existing:
         raise HTTPException(400, "Vocês já estão conectados!")
+
+    if get_active_connection_for_user(db, current_user.id) or get_active_connection_for_user(
+        db, target_user.id
+    ):
+        raise HTTPException(409, "Um dos usuários já possui um vínculo ativo")
     
     # 3. Cancela convites pendentes antigos
     convites_antigos = db.query(CoupleInvite).filter(
@@ -116,22 +125,17 @@ def accept_invite(
     if not invite:
         raise HTTPException(404, "Convite não encontrado ou já respondido")
     
-    invite.status = "accepted"
-
     sender = db.query(User).filter(User.id == invite.sender_id).first()
     if not sender:
         raise HTTPException(404, "Usuário que enviou o convite não foi encontrado")
 
     try:
-        ensure_room_for_users(db, sender, current_user)
+        create_couple_connection(db, sender, current_user)
     except ValueError as exc:
-        raise HTTPException(400, str(exc))
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc))
 
-    connection = CoupleConnection(
-        user1_id=invite.sender_id,
-        user2_id=invite.receiver_id
-    )
-    db.add(connection)
+    invite.status = "accepted"
 
     sender.connection_token = None
     
@@ -220,21 +224,11 @@ def disconnect(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    conn = db.query(CoupleConnection).filter(
-        ((CoupleConnection.user1_id == current_user.id) | (CoupleConnection.user2_id == current_user.id)),
-        CoupleConnection.is_active == True
-    ).first()
+    conn = deactivate_connection(db, current_user.id)
     if not conn:
         raise HTTPException(400, "Nenhuma conexão ativa para desfazer")
-    
-    conn.is_active = False
-    conn.disconnected_at = datetime.now(timezone.utc).replace(tzinfo=None)
-    
-    other_id = conn.user2_id if conn.user1_id == current_user.id else conn.user1_id
 
-    db.query(User).filter(User.id.in_([current_user.id, other_id])).update(
-        {User.room_id: None}, synchronize_session=False
-    )
+    other_id = conn.user2_id if conn.user1_id == current_user.id else conn.user1_id
 
     db.query(Notification).filter(
         Notification.user_id.in_([current_user.id, other_id]),

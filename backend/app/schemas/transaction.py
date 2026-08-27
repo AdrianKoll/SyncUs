@@ -1,7 +1,10 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from ..models.enums import PaidBy, SplitType, TransactionType
 
 
 class CategoryBase(BaseModel):
@@ -20,14 +23,22 @@ class Category(CategoryBase):
 
 
 class TransactionBase(BaseModel):
-    amount: float = Field(ge=0)
+    amount: Decimal = Field(
+        ge=Decimal("0.00"),
+        max_digits=12,
+        decimal_places=2,
+    )
     description: str = Field(min_length=1, max_length=255)
     category_id: Optional[int] = None
-    type: str
+    type: TransactionType
     date: datetime
-    paid_by: str
-    split_type: str
+    paid_by: PaidBy
+    split_type: SplitType
     custom_split_data: Optional[Union[str, dict[str, Any]]] = None
+
+    @field_serializer("amount", when_used="json")
+    def serialize_amount(self, value: Decimal) -> float:
+        return float(value)
 
 
 class TransactionCreate(TransactionBase):
@@ -35,13 +46,18 @@ class TransactionCreate(TransactionBase):
 
 
 class TransactionUpdate(BaseModel):
-    amount: Optional[float] = Field(default=None, ge=0)
+    amount: Optional[Decimal] = Field(
+        default=None,
+        ge=Decimal("0.00"),
+        max_digits=12,
+        decimal_places=2,
+    )
     description: Optional[str] = Field(default=None, min_length=1, max_length=255)
     category_id: Optional[int] = None
-    type: Optional[str] = None
+    type: Optional[TransactionType] = None
     date: Optional[datetime] = None
-    paid_by: Optional[str] = None
-    split_type: Optional[str] = None
+    paid_by: Optional[PaidBy] = None
+    split_type: Optional[SplitType] = None
     custom_split_data: Optional[Union[str, dict[str, Any]]] = None
 
 
@@ -57,13 +73,13 @@ class Transaction(TransactionBase):
 class TransactionListParams(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    type: Optional[str] = None
+    type: Optional[TransactionType] = None
     category_id: Optional[int] = None
 
 
 class DashboardSummary(BaseModel):
-    total_balance: float
-    monthly_income: float
-    monthly_expenses: float
-    monthly_balance: float
+    total_balance: Decimal
+    monthly_income: Decimal
+    monthly_expenses: Decimal
+    monthly_balance: Decimal
     debt_summary: str
