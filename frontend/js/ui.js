@@ -52,6 +52,23 @@ function setupNotifications() {
             showToast(handleApiError(error, 'Não foi possível atualizar as notificações.'), 'danger');
         }
     });
+
+    document.getElementById('limparNotificacoesLidas')?.addEventListener('click', async event => {
+        event.preventDefault();
+        if (!confirm('Apagar todas as notificações já lidas?')) return;
+
+        const button = event.currentTarget;
+        button.disabled = true;
+        try {
+            const response = await apiRequest('/couple/notifications/clear/read', { method: 'DELETE' });
+            showToast(response.mensagem || 'Notificações lidas apagadas.', 'success');
+            await carregarNotificacoes();
+        } catch (error) {
+            showToast(handleApiError(error, 'Não foi possível limpar as notificações lidas.'), 'danger');
+        } finally {
+            button.disabled = false;
+        }
+    });
 }
 
 
@@ -94,25 +111,39 @@ async function carregarNotificacoes() {
         const lista = document.getElementById('listaNotificacoes');
         if (!lista) return;
         const cabecalho = lista.querySelector(':scope > li:first-child');
+        const limparLidas = document.getElementById('limparNotificacoesLidas');
+        if (limparLidas) {
+            limparLidas.disabled = !notificacoes.some(item => item.is_read);
+        }
         const conteudo = notificacoes.length
             ? notificacoes.map(notification => `
-                <li class="notification-item ${notification.is_read ? '' : 'unread'} p-3 border-bottom">
+                <li class="notif-item ${notification.is_read ? 'notif-lida' : ''} p-3 border-bottom">
                     <div class="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                            <div class="fw-bold small">${escapeHtml(notification.title)}</div>
-                            <div class="text-secondary smaller">${escapeHtml(notification.message)}</div>
-                            ${notification.type === 'invite_income' && !notification.is_read ? `
-                                <div class="mt-2 d-flex gap-2">
-                                    <button class="btn btn-sm btn-success" onclick="responderConvite(${notification.related_id}, 'accept')">Aceitar</button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="responderConvite(${notification.related_id}, 'reject')">Recusar</button>
-                                </div>
-                            ` : ''}
+                        <div class="d-flex flex-grow-1 gap-2">
+                            <div class="icone-notif ${notification.is_read ? 'bg-secondary bg-opacity-10' : 'bg-primary bg-opacity-10'}">
+                                <i class="bi ${notification.type === 'invite_income' ? 'bi-person-plus' : 'bi-bell'}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold small">${escapeHtml(notification.title)}</div>
+                                <div class="text-secondary smaller">${escapeHtml(notification.message)}</div>
+                                ${notification.type === 'invite_income' && !notification.is_read ? `
+                                    <div class="mt-2 d-flex gap-2">
+                                        <button class="btn btn-sm btn-success btn-acao-notif" onclick="responderConvite(${notification.related_id}, 'accept')">Aceitar</button>
+                                        <button class="btn btn-sm btn-outline-danger btn-acao-notif" onclick="responderConvite(${notification.related_id}, 'reject')">Recusar</button>
+                                    </div>
+                                ` : ''}
+                            </div>
                         </div>
-                        <div class="smaller text-muted">${formatDate(notification.created_at)}</div>
+                        <div class="d-flex flex-column align-items-end gap-1">
+                            <div class="smaller text-muted text-nowrap">${formatDate(notification.created_at)}</div>
+                            <button class="btn-apagar-notif" title="Apagar notificação" aria-label="Apagar notificação" onclick="apagarNotificacao(${notification.id}, event)">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
                     </div>
                 </li>
             `).join('')
-            : '<li class="p-4 text-center text-secondary small">Nenhuma notificação</li>';
+            : '<li class="p-4 text-center text-secondary small notif-vazia">Nenhuma notificação</li>';
 
         lista.innerHTML = '';
         if (cabecalho) lista.appendChild(cabecalho);
@@ -122,6 +153,19 @@ async function carregarNotificacoes() {
         else console.error('Erro ao carregar notificações:', error);
     }
 }
+
+
+window.apagarNotificacao = async function (notificationId, event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    try {
+        await apiRequest(`/couple/notifications/${notificationId}`, { method: 'DELETE' });
+        showToast('Notificação apagada.', 'success');
+        await carregarNotificacoes();
+    } catch (error) {
+        showToast(handleApiError(error, 'Não foi possível apagar a notificação.'), 'danger');
+    }
+};
 
 
 window.responderConvite = async function (inviteId, action) {
@@ -225,8 +269,9 @@ async function inicializarDashboard() {
         const balanceMessage = document.getElementById('saldoEntreMensagem');
         const balanceValue = document.getElementById('saldoEntreValor');
         if (balanceMessage && balanceValue) {
-            if (coupleBalance.direction === 'partner_owes_current') balanceMessage.textContent = 'Seu parceiro deve a você';
-            else if (coupleBalance.direction === 'current_owes_partner') balanceMessage.textContent = 'Você deve ao seu parceiro';
+            const textosParceiro = textosDoGenero(null);
+            if (coupleBalance.direction === 'partner_owes_current') balanceMessage.textContent = `${textosParceiro.parceiro.charAt(0).toUpperCase() + textosParceiro.parceiro.slice(1)} deve a você`;
+            else if (coupleBalance.direction === 'current_owes_partner') balanceMessage.textContent = `Você deve ${textosParceiro.destino}`;
             else balanceMessage.textContent = 'Nenhuma diferença pendente';
             balanceValue.textContent = formatCurrency(coupleBalance.amount);
         }
@@ -248,6 +293,15 @@ async function inicializarDashboard() {
             if (partner?.parceiro) {
                 const avatar = document.getElementById('saldoAvatarParceiro');
                 if (avatar) avatar.textContent = iniciaisDoNome(partner.parceiro.nome);
+                const textosParceiro = textosDoGenero(partner.parceiro.gender);
+                if (balanceMessage && balanceValue) {
+                    if (coupleBalance.direction === 'partner_owes_current') {
+                        const capitalizado = textosParceiro.parceiro.charAt(0).toUpperCase() + textosParceiro.parceiro.slice(1);
+                        balanceMessage.textContent = `${capitalizado} deve a você`;
+                    } else if (coupleBalance.direction === 'current_owes_partner') {
+                        balanceMessage.textContent = `Você deve ${textosParceiro.destino}`;
+                    }
+                }
             }
         } catch (error) {
             console.warn('Vínculo não disponível no dashboard:', error);

@@ -47,7 +47,10 @@
                 <ul class="dropdown-menu dropdown-menu-end p-0 caixa-notif" id="listaNotificacoes">
                     <li class="p-3 border-bottom d-flex justify-content-between align-items-center">
                         <strong class="small">🔔 Notificações</strong>
-                        <button class="btn btn-link p-0 text-decoration-none small" id="marcarTodasLidas">Marcar todas</button>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-link p-0 text-decoration-none small" id="marcarTodasLidas">Marcar todas</button>
+                            <button class="btn-limpar-lidas" id="limparNotificacoesLidas" title="Apagar notificações já lidas">Limpar lidas</button>
+                        </div>
                     </li>
                     <li class="p-4 text-center text-secondary small notif-vazia">Carregando...</li>
                 </ul>

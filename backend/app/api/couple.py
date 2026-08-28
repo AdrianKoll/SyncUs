@@ -4,6 +4,7 @@ from typing import List
 from datetime import datetime, timezone
 from app.core.deps import get_db, get_current_user
 from app.models.models import User, CoupleInvite, CoupleConnection, Notification
+from app.models.enums import Gender
 from app.services.room_service import (
     create_couple_connection,
     deactivate_connection,
@@ -15,10 +16,20 @@ from pydantic import BaseModel, ConfigDict
 class InviteCreate(BaseModel):
     token: str
 
+
+def label_for_gender(gender: str | None) -> str:
+    if gender == Gender.HOMEM.value:
+        return "seu parceiro"
+    if gender == Gender.MULHER.value:
+        return "sua parceira"
+    return "seu/sua parceiro(a)"
+
+
 class PartnerResponse(BaseModel):
     id: int
     nome: str
     email: str
+    gender: Gender | None = None
     conectado_em: str
 
 class ConnectionResponse(BaseModel):
@@ -98,7 +109,7 @@ def send_invite(
     db.add(Notification(
         user_id=target_user.id,
         title="📩 Alguém quer se conectar com você!",
-        message=f"{current_user.name} quer ser seu parceiro. E-mail: {current_user.email}",
+        message=f"{current_user.name} quer ser {label_for_gender(current_user.gender)}. E-mail: {current_user.email}",
         type="invite_income",
         related_id=new_invite.id
     ))
@@ -206,7 +217,7 @@ def get_partner(
         return {"conectado": False, "parceiro": None}
     
     partner_id = conn.user2_id if conn.user1_id == current_user.id else conn.user1_id
-    partner = db.query(User).get(partner_id)
+    partner = db.get(User, partner_id)
     
     return {
         "conectado": True,
@@ -214,6 +225,7 @@ def get_partner(
             "id": partner.id,
             "nome": partner.name,
             "email": partner.email,
+            "gender": partner.gender,
             "conectado_em": conn.connected_at.strftime("%d/%m/%Y às %H:%M") if conn.connected_at else ""
         }
     }

@@ -46,6 +46,18 @@
                 </div>
             </div>
 
+            <!-- GÊNERO -->
+            <div class="mb-3">
+                <label class="form-label small" for="generoRegistro">
+                    <i class="bi bi-person-badge me-1 text-secondary"></i>Como você se identifica?
+                </label>
+                <select name="gender" id="generoRegistro" class="form-select" required>
+                    <option value="homem">Homem</option>
+                    <option value="mulher">Mulher</option>
+                    <option value="nao_informado" selected>Prefiro não informar</option>
+                </select>
+            </div>
+
             <!-- E-MAIL -->
             <div class="mb-3">
                 <label class="form-label small">
@@ -133,6 +145,7 @@
             const form = new FormData(e.target);
             const nome = form.get('nome').trim();
             const email = form.get('email').trim();
+            const genero = form.get('gender');
             const senha = form.get('password');
             const confirmaSenha = document.getElementById('confirmaSenha').value;
 
@@ -148,6 +161,7 @@
                 const corpo = {
                     name: nome,
                     email: email,
+                    gender: genero,
                     password: senha
                     // se precisar de username separado: username: email
                 };

@@ -13,7 +13,8 @@ def create_user(db: Session, user: UserCreate):
     db_user = User(
         name=user.name,
         email=user.email,
-        hashed_password=get_password_hash(user.password)
+        gender=user.gender.value if user.gender else None,
+        hashed_password=get_password_hash(user.password),
     )
     db.add(db_user)
     db.commit()
@@ -25,6 +26,8 @@ def update_user(db: Session, db_user: User, user_update: UserUpdate):
         db_user.name = user_update.name
     if user_update.email:
         db_user.email = user_update.email
+    if user_update.gender is not None:
+        db_user.gender = user_update.gender.value
     if user_update.password:
         db_user.hashed_password = get_password_hash(user_update.password)
     db.commit()

@@ -8,7 +8,7 @@
      ===================================================== -->
 <div class="card p-4 mb-4">
     <h5 class="fw-bold mb-4">
-        <i class="bi bi-link-45deg text-primary me-2"></i>Conexão com sua parceira
+        <i class="bi bi-link-45deg text-primary me-2"></i><span id="tituloConexaoPerfil">Conexão com seu/sua parceiro(a)</span>
     </h5>
     <div class="row g-4">
         <!-- SEU TOKEN + BOTÃO COPIAR (grudados) -->
@@ -29,20 +29,20 @@
                 <i class="bi bi-arrow-clockwise me-1"></i>Gerar novo token
             </button>
             <div class="text-secondary small mt-2">
-                <i class="bi bi-clock me-1"></i>Validade: 7 dias · Compartilhe apenas com sua parceira
+                <i class="bi bi-clock me-1"></i>Validade: 7 dias · <span id="dicaTokenParceiro">Compartilhe apenas com seu/sua parceiro(a)</span>
             </div>
         </div>
 
         <!-- TOKEN DELA + BOTÃO ENVIAR (grudados) -->
         <div class="col-md-6">
             <label class="form-label small">
-                <i class="bi bi-send me-1 text-secondary"></i>Token da sua parceira
+                <i class="bi bi-send me-1 text-secondary"></i><span id="rotuloTokenParceiro">Token do seu/sua parceiro(a)</span>
             </label>
             <div class="input-group mb-2">
                 <span class="input-group-text bg-transparent border-end-0">
                     <i class="bi bi-envelope text-secondary"></i>
                 </span>
-                <input type="text" id="partnerToken" class="form-control border-start-0 border-end-0" placeholder="Cole o token dela aqui...">
+                <input type="text" id="partnerToken" class="form-control border-start-0 border-end-0" placeholder="Cole o token dele/dela aqui...">
                 <button class="btn btn-success rounded-end" onclick="enviarPedidoVinculo()">
                     <i class="bi bi-send me-1"></i>Enviar pedido
                 </button>
@@ -58,8 +58,8 @@
      CARD PARCEIRO CONECTADO (sempre visível)
      ===================================================== -->
 <div class="card p-4 mb-4" id="cardParceiro">
-    <h5 class="fw-bold mb-4" id="tituloParceiro">
-        <i class="bi bi-check-circle me-2 text-success"></i>Parceira conectada
+        <h5 class="fw-bold mb-4" id="tituloParceiro">
+        <i class="bi bi-check-circle me-2 text-success"></i><span id="tituloStatusParceiro">Parceiro(a) conectado(a)</span>
     </h5>
     
     <!-- ESTADO 1: Conectado - mostra dados da parceira -->
@@ -77,7 +77,7 @@
                 </p>
                 <p class="mb-0 text-success small">
                     <i class="bi bi-calendar-check me-1"></i>
-                    Conectada desde: <span id="dataP">-</span>
+                    <span id="rotuloConectadoDesde">Conectado(a) desde</span>: <span id="dataP">-</span>
                 </p>
             </div>
             <div class="d-flex flex-column gap-2">
@@ -99,11 +99,11 @@
             </div>
             <div class="flex-grow-1">
                 <p class="mb-1 fs-5 text-secondary">
-                    <strong>Nenhuma parceira conectada ainda</strong>
+                    <strong id="textoSemParceiro">Nenhum(a) parceiro(a) conectado(a) ainda</strong>
                 </p>
                 <p class="mb-0 text-secondary small">
                     <i class="bi bi-info-circle me-1"></i>
-                    Compartilhe seu token acima ou cole o token dela para estabelecer a conexão.
+                    <span id="textoComoConectar">Compartilhe seu token acima ou cole o token dele/dela para estabelecer a conexão.</span>
                 </p>
             </div>
             <div class="text-center">
@@ -140,6 +140,21 @@
                         <i class="bi bi-person text-secondary"></i>
                     </span>
                     <input type="text" id="profileName" class="form-control border-start-0" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small" for="profileGender">
+                    <i class="bi bi-person-badge me-1 text-secondary"></i>Como você se identifica?
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="bi bi-person-badge text-secondary"></i>
+                    </span>
+                    <select id="profileGender" class="form-select border-start-0">
+                        <option value="homem">Homem</option>
+                        <option value="mulher">Mulher</option>
+                        <option value="nao_informado">Prefiro não informar</option>
+                    </select>
                 </div>
             </div>
             <div class="col-md-6">
@@ -260,10 +275,13 @@ document.addEventListener('viewCarregada', async () => {
     const tokenElement = document.getElementById('myToken');
     const nameElement = document.getElementById('profileName');
     const emailElement = document.getElementById('profileEmail');
-    if (!tokenElement || !nameElement || !emailElement) return;
+    const genderElement = document.getElementById('profileGender');
+    if (!tokenElement || !nameElement || !emailElement || !genderElement) return;
     tokenElement.value = user.connection_token || 'Nenhum token gerado';
     nameElement.value = user.name;
     emailElement.value = user.email;
+    genderElement.value = user.gender || 'nao_informado';
+    aplicarTextosDeConexao(null);
 
     // Carrega dados do parceiro se conectado
     await carregarParceiro(tokenDaView);
@@ -307,10 +325,11 @@ window.visualizarPerfilParceiro = async () => {
     try {
         const connection = await apiRequest('/couple/partner');
         if (!connection.conectado || !connection.parceiro) {
-            showToast('Nenhum parceiro conectado.', 'warning');
+            showToast(`${textosDoGenero(null).nenhum}.`, 'warning');
             return;
         }
-        showToast(`${connection.parceiro.nome} — ${connection.parceiro.email}`, 'info');
+        const textos = textosDoGenero(connection.parceiro.gender);
+        showToast(`${connection.parceiro.nome} — ${textos.pessoa} — ${connection.parceiro.email}`, 'info');
     } catch (error) {
         showToast(handleApiError(error, 'Não foi possível carregar o perfil do parceiro.'), 'danger');
     }
@@ -351,6 +370,28 @@ window.excluirTodosDados = async () => {
 
 document.getElementById('btnExcluirTodosDados')?.addEventListener('click', window.excluirTodosDados);
 
+function aplicarTextosDeConexao(genero) {
+    const textos = textosDoGenero(genero);
+    const capitalizado = textos.parceiro.charAt(0).toUpperCase() + textos.parceiro.slice(1);
+    const tituloConexao = document.getElementById('tituloConexaoPerfil');
+    const rotuloToken = document.getElementById('rotuloTokenParceiro');
+    const dicaToken = document.getElementById('dicaTokenParceiro');
+    const tituloStatus = document.getElementById('tituloStatusParceiro');
+    const rotuloDesde = document.getElementById('rotuloConectadoDesde');
+    const textoSemParceiro = document.getElementById('textoSemParceiro');
+    const textoComoConectar = document.getElementById('textoComoConectar');
+    const inputToken = document.getElementById('partnerToken');
+
+    if (tituloConexao) tituloConexao.textContent = textos.connectionTitulo;
+    if (rotuloToken) rotuloToken.textContent = textos.tokenTitulo;
+    if (dicaToken) dicaToken.textContent = textos.tokenDica;
+    if (tituloStatus) tituloStatus.textContent = `${capitalizado} ${textos.conectado}`;
+    if (rotuloDesde) rotuloDesde.textContent = textos.conectadoDesde;
+    if (textoSemParceiro) textoSemParceiro.textContent = textos.nenhum;
+    if (textoComoConectar) textoComoConectar.textContent = `Compartilhe seu token acima ou cole o token ${textos.token} para estabelecer a conexão.`;
+    if (inputToken) inputToken.placeholder = `Cole o token ${textos.token} aqui...`;
+}
+
 async function carregarParceiro(tokenDaView = window.__syncusViewToken) {
     try {
         const dados = await apiRequest('/couple/partner');
@@ -368,8 +409,15 @@ async function carregarParceiro(tokenDaView = window.__syncusViewToken) {
             if (dados.conectado && dados.parceiro) {
                 const p = dados.parceiro;
                 
-                // TEM CONEXÃO - mostra dados da parceira
-                titulo.innerHTML = '<i class="bi bi-check-circle me-2 text-success"></i>Parceira conectada';
+                // TEM CONEXÃO - mostra dados do parceiro
+                aplicarTextosDeConexao(p.gender);
+                titulo.innerHTML = '<i class="bi bi-check-circle me-2 text-success"></i><span id="tituloStatusParceiro">Parceiro(a) conectado(a)</span>';
+                const textos = textosDoGenero(p.gender);
+                const tituloStatus = titulo.querySelector('#tituloStatusParceiro');
+                if (tituloStatus) {
+                    const capitalizado = textos.parceiro.charAt(0).toUpperCase() + textos.parceiro.slice(1);
+                    tituloStatus.textContent = `${capitalizado} ${textos.conectado}`;
+                }
                 cardParceiro.classList.add('border-start', 'border-5', 'border-success');
                 conectadoDiv.classList.remove('d-none');
                 semConexaoDiv.classList.add('d-none');
@@ -383,6 +431,7 @@ async function carregarParceiro(tokenDaView = window.__syncusViewToken) {
         }
         
         // SEM CONEXÃO - mostra aviso
+        aplicarTextosDeConexao(null);
         titulo.innerHTML = '<i class="bi bi-link-45deg-slash me-2 text-secondary"></i>Status da conexão';
         cardParceiro.classList.remove('border-start', 'border-5', 'border-success');
         conectadoDiv.classList.add('d-none');
@@ -396,6 +445,7 @@ async function carregarParceiro(tokenDaView = window.__syncusViewToken) {
         const conectadoDiv = document.getElementById('parceiroConectado');
         const semConexaoDiv = document.getElementById('semConexao');
         if (![titulo, cardParceiro, conectadoDiv, semConexaoDiv].every(Boolean)) return;
+        aplicarTextosDeConexao(null);
         titulo.innerHTML = '<i class="bi bi-link-45deg-slash me-2 text-secondary"></i>Status da conexão';
         cardParceiro.classList.remove('border-start', 'border-5', 'border-success');
         conectadoDiv.classList.add('d-none');
@@ -450,6 +500,7 @@ document.addEventListener('submit', async (e) => {
     // Preparar dados para envio
     const dados = {
         name: nome,
+        gender: document.getElementById('profileGender').value,
         current_password: senhaAtual
     };
     

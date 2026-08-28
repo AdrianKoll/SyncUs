@@ -17,3 +17,9 @@ class SplitType(str, Enum):
     FULL_USER1 = "100_user1"
     FULL_USER2 = "100_user2"
     CUSTOM = "custom"
+
+
+class Gender(str, Enum):
+    HOMEM = "homem"
+    MULHER = "mulher"
+    NAO_INFORMADO = "nao_informado"

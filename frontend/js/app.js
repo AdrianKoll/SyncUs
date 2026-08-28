@@ -222,6 +222,52 @@ function iniciaisDoNome(nome) {
         .join('');
 }
 
+function textosDoGenero(genero) {
+    if (genero === 'homem') {
+        return {
+            pessoa: 'homem',
+            parceiro: 'parceiro',
+            possessivo: 'seu',
+            conectado: 'conectado',
+            conectadoDesde: 'Conectado desde',
+            nenhum: 'Nenhum parceiro conectado ainda',
+            token: 'dele',
+            tokenTitulo: 'Token do seu parceiro',
+            tokenDica: 'Compartilhe apenas com seu parceiro',
+            connectionTitulo: 'Conexão com seu parceiro',
+            destino: 'ao seu parceiro',
+        };
+    }
+    if (genero === 'mulher') {
+        return {
+            pessoa: 'mulher',
+            parceiro: 'parceira',
+            possessivo: 'sua',
+            conectado: 'conectada',
+            conectadoDesde: 'Conectada desde',
+            nenhum: 'Nenhuma parceira conectada ainda',
+            token: 'dela',
+            tokenTitulo: 'Token da sua parceira',
+            tokenDica: 'Compartilhe apenas com sua parceira',
+            connectionTitulo: 'Conexão com sua parceira',
+            destino: 'à sua parceira',
+        };
+    }
+    return {
+        pessoa: 'pessoa',
+        parceiro: 'parceiro(a)',
+        possessivo: 'seu/sua',
+        conectado: 'conectado(a)',
+        conectadoDesde: 'Conectado(a) desde',
+        nenhum: 'Nenhum(a) parceiro(a) conectado(a) ainda',
+        token: 'dele/dela',
+        tokenTitulo: 'Token do seu/sua parceiro(a)',
+        tokenDica: 'Compartilhe apenas com seu/sua parceiro(a)',
+        connectionTitulo: 'Conexão com seu/sua parceiro(a)',
+        destino: 'ao/à seu/sua parceiro(a)',
+    };
+}
+
 // =========================
 // TOAST (MENSAGENS)
 // =========================

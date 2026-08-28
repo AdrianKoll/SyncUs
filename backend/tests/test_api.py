@@ -627,3 +627,107 @@ def test_report_endpoint_returns_backend_aggregates(client):
     assert data["aggregates"]["payer_totals"]["eu"] == "0.10"
     assert data["aggregates"]["payer_totals"]["parceira"] == "0.20"
     assert data["transactions"][0]["amount"] == "0.10"
+
+
+def test_gender_is_saved_and_exposed_for_partner(client):
+    alice = client.post(
+        "/api/auth/register",
+        json={
+            "name": "Alice Gender",
+            "email": "alice-gender@example.com",
+            "gender": "mulher",
+            "password": "Senha123!",
+        },
+    )
+    bob = client.post(
+        "/api/auth/register",
+        json={
+            "name": "Bob Gender",
+            "email": "bob-gender@example.com",
+            "gender": "homem",
+            "password": "Senha123!",
+        },
+    )
+    assert alice.status_code == 200, alice.text
+    assert bob.status_code == 200, bob.text
+
+    alice_headers = _login(client, "alice-gender@example.com")
+    bob_headers = _login(client, "bob-gender@example.com")
+    alice_me = client.get("/api/users/me", headers=alice_headers)
+    assert alice_me.status_code == 200
+    assert alice_me.json()["gender"] == "mulher"
+
+    invite = client.post(
+        "/api/couple/invite/send",
+        headers=alice_headers,
+        json={"token": bob.json()["connection_token"]},
+    )
+    assert invite.status_code == 201, invite.text
+    notification = client.get(
+        "/api/couple/notifications", headers=bob_headers
+    ).json()[0]
+    assert "sua parceira" in notification["message"]
+    accepted = client.post(
+        f"/api/couple/invite/{notification['related_id']}/accept",
+        headers=bob_headers,
+    )
+    assert accepted.status_code == 200, accepted.text
+
+    partner = client.get("/api/couple/partner", headers=alice_headers)
+    assert partner.status_code == 200, partner.text
+    assert partner.json()["parceiro"]["gender"] == "homem"
+
+
+def test_user_can_delete_one_notification_and_clear_read_notifications(client):
+    _register(client, "Alice Notifications", "alice-notifications@example.com")
+    bob = _register(client, "Bob Notifications", "bob-notifications@example.com")
+    alice_headers = _login(client, "alice-notifications@example.com")
+    bob_headers = _login(client, "bob-notifications@example.com")
+
+    first_invite = client.post(
+        "/api/couple/invite/send",
+        headers=alice_headers,
+        json={"token": bob["connection_token"]},
+    )
+    assert first_invite.status_code == 201, first_invite.text
+    first_notifications = client.get(
+        "/api/couple/notifications", headers=bob_headers
+    ).json()
+    assert len(first_notifications) == 1
+
+    marked = client.put(
+        "/api/couple/notifications/read-all", headers=bob_headers
+    )
+    assert marked.status_code == 200, marked.text
+    cleared = client.delete(
+        "/api/couple/notifications/clear/read", headers=bob_headers
+    )
+    assert cleared.status_code == 200, cleared.text
+    assert client.get(
+        "/api/couple/notifications", headers=bob_headers
+    ).json() == []
+
+    second_invite = client.post(
+        "/api/couple/invite/send",
+        headers=alice_headers,
+        json={"token": bob["connection_token"]},
+    )
+    assert second_invite.status_code == 201, second_invite.text
+    second_notification = client.get(
+        "/api/couple/notifications", headers=bob_headers
+    ).json()[0]
+    deleted = client.delete(
+        f"/api/couple/notifications/{second_notification['id']}",
+        headers=bob_headers,
+    )
+    assert deleted.status_code == 200, deleted.text
+    assert client.get(
+        "/api/couple/notifications", headers=bob_headers
+    ).json() == []
+
+    # A notificação já foi apagada; outro usuário não recebe acesso ao recurso.
+    forbidden_delete = client.delete(
+        f"/api/couple/notifications/{second_notification['id']}",
+        headers=alice_headers,
+    )
+    assert forbidden_delete.status_code == 404
